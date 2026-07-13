@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>梵谷畫作與生涯時期配對</title>
+  <style>
+    @font-face {
+      font-family: 'ChenYuluoyan';
+      src: url('https://github.com/Chenyu-otf/chenyuluoyan_thin/releases/download/v1.0/ChenYuluoyan-Thin.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "ChenYuluoyan", "Microsoft JhengHei", "PingFang TC", sans-serif;
+      background: #e8c9a0;
+      background-image:
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.25) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 40%);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #5a3e1b;
+      margin-bottom: 6px;
+      font-size: 2.2em;
+      text-shadow: 2px 2px 0 rgba(255,255,255,0.4);
+      letter-spacing: 4px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #7a5e3b;
+      margin-bottom: 20px;
+      font-size: 1.05em;
+      text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
+    }
+
+    /* ── 分類區 ── */
+    .categories {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .category-zone {
+      background: linear-gradient(145deg, #f5e6d0, #e8d4b8);
+      border: none;
+      border-radius: 22px;
+      padding: 12px 8px 8px;
+      min-height: 100px;
+      text-align: center;
+      box-shadow:
+        6px 6px 12px rgba(120,80,40,0.25),
+        -3px -3px 8px rgba(255,255,255,0.5),
+        inset 0 1px 2px rgba(255,255,255,0.4);
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .category-zone.hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow:
+        8px 8px 16px rgba(120,80,40,0.3),
+        -4px -4px 10px rgba(255,255,255,0.6),
+        inset 0 1px 2px rgba(255,255,255,0.4);
+    }
+
+    .category-zone h2 {
+      font-size: .95em;
+      color: #fff;
+      background: linear-gradient(135deg, #8b5e3c, #a0704e);
+      border-radius: 12px;
+      padding: 6px 4px;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,0.2),
+        0 3px 6px rgba(80,40,10,0.2);
+    }
+
+    .category-zone .dropped {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    /* ── 畫作池 ── */
+    .paintings-label {
+      font-size: 1.1em;
+      color: #5a3e1b;
+      margin-bottom: 10px;
+      font-weight: bold;
+      text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
+    }
+
+    .paintings-pool {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      padding: 16px;
+      background: linear-gradient(145deg, #f0dcc4, #e4cfb5);
+      border-radius: 26px;
+      box-shadow:
+        8px 8px 16px rgba(120,80,40,0.25),
+        -4px -4px 10px rgba(255,255,255,0.5),
+        inset 0 1px 2px rgba(255,255,255,0.3);
+      min-height: 60px;
+      align-items: flex-start;
+    }
+
+    /* ── 畫作卡片 ── 統一大小，不論在哪裡都不變 */
+    .painting-card {
+      cursor: grab;
+      background: linear-gradient(145deg, #faf3ea, #ede0d0);
+      border: 3px solid transparent;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow:
+        4px 4px 10px rgba(120,80,40,0.2),
+        -2px -2px 6px rgba(255,255,255,0.4);
+      transition: transform .15s, box-shadow .15s, border-color .3s;
+      user-select: none;
+      flex-shrink: 0;
+      line-height: 0;
+    }
+
+    .painting-card:hover {
+      transform: translateY(-3px);
+      box-shadow:
+        6px 6px 14px rgba(120,80,40,0.25),
+        -3px -3px 8px rgba(255,255,255,0.5);
+    }
+
+    .painting-card img {
+      display: block;
+      object-fit: contain;
+    }
+
+    .painting-card.dragging { opacity: .4; }
+
+    .painting-card.ok    { border-color: #27ae60; }
+    .painting-card.fail  { border-color: #e74c3c; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-6px); }
+      75%     { transform: translateX(6px); }
+    }
+
+    /* ── 按鈕列 ── */
+    .btn-row {
+      text-align: center;
+      margin: 18px 0;
+    }
+
+    .submit-btn, .reset-btn {
+      display: inline-block;
+      padding: 12px 36px;
+      font-size: 1.1em;
+      font-family: inherit;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: transform .15s, box-shadow .15s;
+    }
+
+    .submit-btn {
+      background: linear-gradient(145deg, #c0392b, #e74c3c);
+      color: #fff;
+      box-shadow:
+        4px 4px 10px rgba(150,30,20,0.3),
+        -2px -2px 6px rgba(255,255,255,0.2);
+    }
+
+    .submit-btn:hover { transform: translateY(-2px); }
+    .submit-btn:disabled { opacity: .5; cursor: default; transform: none; }
+
+    .reset-btn {
+      background: linear-gradient(145deg, #8b5e3c, #a0704e);
+      color: #fff;
+      margin-left: 10px;
+      box-shadow:
+        4px 4px 10px rgba(80,40,10,0.3),
+        -2px -2px 6px rgba(255,255,255,0.2);
+    }
+
+    .reset-btn:hover { transform: translateY(-2px); }
+
+    /* ── 結果訊息 ── */
+    .result-msg {
+      display: none;
+      text-align: center;
+      margin-top: 16px;
+      padding: 20px;
+      border-radius: 22px;
+      font-size: 1.3em;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+      position: relative;
+      z-index: 10;
+    }
+
+    .result-msg.correct {
+      background: linear-gradient(145deg, #5cb85c, #449d44);
+      color: #fff;
+      box-shadow:
+        6px 6px 14px rgba(40,80,20,0.3),
+        -3px -3px 8px rgba(255,255,255,0.2);
+    }
+
+    .result-msg.wrong {
+      background: linear-gradient(145deg, #e74c3c, #c0392b);
+      color: #fff;
+      box-shadow:
+        6px 6px 14px rgba(150,30,20,0.3),
+        -3px -3px 8px rgba(255,255,255,0.2);
+    }
+
+    /* ── 回到大地圖 ── */
+    .back-map{position:fixed;top:14px;left:14px;z-index:9998;padding:8px 16px;font-family:inherit;font-size:.9em;border:2px solid #c0a06a;border-radius:10px;background:rgba(255,248,220,.92);color:#5a3e1b;cursor:pointer;text-decoration:none}
+    .back-map:active{transform:scale(.95)}
+
+    /* ── 向日葵 Canvas ── */
+    #sunflower-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* 手機適配 */
+    @media (max-width: 800px) {
+      .categories { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 500px) {
+      .categories { grid-template-columns: 1fr; }
+      h1 { font-size: 1.6em; }
+    }
+  </style>
+</head>
+<body>
+<a class="back-map" href="../探索梵谷大地圖/index.html">← 回到大地圖</a>
+
+<h1>梵谷畫作與生涯時期配對</h1>
+<p class="subtitle">將下方畫作拖曳到正確的時期分類中，完成後按下「提交」</p>
+
+<div class="categories" id="categories"></div>
+
+<p class="paintings-label">待配對畫作：</p>
+<div class="paintings-pool" id="pool"></div>
+
+<div class="btn-row">
+  <button class="submit-btn" id="submitBtn" onclick="submitAnswers()">提交</button>
+  <button class="reset-btn" id="retryBtn" style="display:none" onclick="retryGame()">重新作答</button>
+  <button class="reset-btn" id="newGameBtn" style="display:none" onclick="initGame()">再玩一次</button>
+</div>
+
+<div class="result-msg" id="resultMsg"></div>
+
+<canvas id="sunflower-canvas"></canvas>
+
+<script>
+const categories = [
+  { id: "dutch",     name: "荷蘭時期" },
+  { id: "paris",     name: "巴黎時期" },
+  { id: "arles",     name: "阿爾時期" },
+  { id: "saint-auv", name: "聖雷米與奧維時期" }
+];
+
+const CARD_W = 120;
+
+const paintings = [
+  { img: "../各時期畫作/荷蘭時期_努南的舊塔樓.png",           period: "dutch",     w: 700, h: 532 },
+  { img: "../各時期畫作/荷蘭時期_挖馬鈴薯的農婦.png",         period: "dutch",     w: 692, h: 502 },
+  { img: "../各時期畫作/荷蘭時期_食薯者.png",                 period: "dutch",     w: 767, h: 537 },
+  { img: "../各時期畫作/巴黎時期_戴灰氈帽的自畫像.png",       period: "paris",     w: 441, h: 546 },
+  { img: "../各時期畫作/巴黎時期_花魁.png",                   period: "paris",     w: 312, h: 540 },
+  { img: "../各時期畫作/巴黎時期_餐廳內.png",                 period: "paris",     w: 662, h: 542 },
+  { img: "../各時期畫作/阿爾時期_向日葵.png",                 period: "arles",     w: 381, h: 504 },
+  { img: "../各時期畫作/阿爾時期_普羅旺斯秋收.png",           period: "arles",     w: 537, h: 527 },
+  { img: "../各時期畫作/阿爾時期_阿爾的畫室.png",             period: "arles",     w: 692, h: 537 },
+  { img: "../各時期畫作/聖雷米與奧維時期_星空.png",           period: "saint-auv", w: 651, h: 511 },
+  { img: "../各時期畫作/聖雷米與奧維時期_柏樹與兩個人物.png", period: "saint-auv", w: 426, h: 541 },
+  { img: "../各時期畫作/聖雷米與奧維時期_橄欖樹叢.png",       period: "saint-auv", w: 631, h: 495 }
+];
+
+function calcCardH(p) { return Math.round(CARD_W * p.h / p.w); }
+
+/* 記錄目前卡在哪個 zone（null = 還在池裡） */
+let cardZone = {};
+let shuffled = [];
+let submitted = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function initGame() {
+  cardZone = {};
+  submitted = false;
+  document.getElementById("resultMsg").style.display = "none";
+  document.getElementById("resultMsg").className = "result-msg";
+  document.getElementById("submitBtn").style.display = "";
+  document.getElementById("submitBtn").disabled = false;
+  document.getElementById("retryBtn").style.display = "none";
+  document.getElementById("newGameBtn").style.display = "none";
+
+  /* 建分類區 */
+  const catBox = document.getElementById("categories");
+  catBox.innerHTML = "";
+  categories.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "category-zone";
+    div.dataset.period = c.id;
+    div.innerHTML = `<h2>${c.name}</h2><div class="dropped"></div>`;
+
+    div.addEventListener("dragover", e => { e.preventDefault(); div.classList.add("hover"); });
+    div.addEventListener("dragleave", () => div.classList.remove("hover"));
+    div.addEventListener("drop", e => {
+      e.preventDefault();
+      div.classList.remove("hover");
+      const id = e.dataTransfer.getData("text/plain");
+      moveCardToZone(id, c.id);
+    });
+
+    catBox.appendChild(div);
+  });
+
+  /* 建畫作池 */
+  const pool = document.getElementById("pool");
+  pool.innerHTML = "";
+  shuffled = shuffle(paintings);
+
+  shuffled.forEach((p, idx) => {
+    const cardH = calcCardH(p);
+    const card = document.createElement("div");
+    card.className = "painting-card";
+    card.draggable = true;
+    card.dataset.id = idx;
+    card.dataset.period = p.period;
+    card.style.width  = CARD_W + "px";
+    card.style.height = cardH + "px";
+    card.innerHTML = `<img src="${p.img}" alt="畫作" width="${CARD_W}" height="${cardH}">`;
+
+    card.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", idx);
+      card.classList.add("dragging");
+    });
+    card.addEventListener("dragend", () => card.classList.remove("dragging"));
+
+    card.addEventListener("touchstart", handleTouchStart, { passive: false });
+    card.addEventListener("touchmove", handleTouchMove, { passive: false });
+    card.addEventListener("touchend", handleTouchEnd);
+
+    pool.appendChild(card);
+  });
+}
+
+/* ── 移動卡片到指定 zone（或回池子） ── */
+function moveCardToZone(id, targetPeriod) {
+  const card = document.querySelector(`.painting-card[data-id="${id}"]`);
+  if (!card || submitted) return;
+
+  if (targetPeriod === "pool") {
+    document.getElementById("pool").appendChild(card);
+    delete cardZone[id];
+  } else {
+    const zone = document.querySelector(`.category-zone[data-period="${targetPeriod}"] .dropped`);
+    if (zone) zone.appendChild(card);
+    cardZone[id] = targetPeriod;
+  }
+}
+
+/* ── 提交對答案 ── */
+function submitAnswers() {
+  /* 檢查是否全部都放進分類區 */
+  const total = paintings.length;
+  const placed = Object.keys(cardZone).length;
+  if (placed < total) {
+    const msg = document.getElementById("resultMsg");
+    msg.textContent = `還有 ${total - placed} 張畫作尚未放入分類區，請全部放好再提交！`;
+    msg.className = "result-msg wrong";
+    msg.style.display = "block";
+    return;
+  }
+
+  submitted = true;
+  document.getElementById("submitBtn").disabled = true;
+
+  let wrongCount = 0;
+
+  shuffled.forEach((p, idx) => {
+    const card = document.querySelector(`.painting-card[data-id="${idx}"]`);
+    if (!card) return;
+    const inZone = cardZone[idx];
+    if (inZone === p.period) {
+      card.classList.add("ok");
+    } else {
+      card.classList.add("fail");
+      wrongCount++;
+    }
+  });
+
+  const msg = document.getElementById("resultMsg");
+  if (wrongCount === 0) {
+    msg.textContent = "全部正確！你對梵谷的生涯很了解！";
+    msg.className = "result-msg correct";
+    msg.style.display = "block";
+    document.getElementById("submitBtn").style.display = "none";
+    document.getElementById("newGameBtn").style.display = "";
+    launchSunflowersFromCorners();
+    localStorage.setItem("cert_dynasty", "1");
+  } else {
+    msg.textContent = `有 ${wrongCount} 張放錯了，紅色框的就是答錯的，請按「重新作答」再試一次！`;
+    msg.className = "result-msg wrong";
+    msg.style.display = "block";
+    document.getElementById("submitBtn").style.display = "none";
+    document.getElementById("retryBtn").style.display = "";
+  }
+}
+
+/* ── 重新作答：把卡片全倒回池子 ── */
+function retryGame() {
+  submitted = false;
+  cardZone = {};
+  document.getElementById("resultMsg").style.display = "none";
+  document.getElementById("submitBtn").style.display = "";
+  document.getElementById("submitBtn").disabled = false;
+  document.getElementById("retryBtn").style.display = "none";
+
+  const pool = document.getElementById("pool");
+
+  /* 把所有卡片倒回池子，清掉 ok / fail 樣式 */
+  document.querySelectorAll(".painting-card").forEach(card => {
+    card.classList.remove("ok", "fail");
+    pool.appendChild(card);
+  });
+}
+
+/* ═══════ 手機觸控 ═══════ */
+let touchClone = null;
+let touchCard = null;
+let touchId = null;
+
+function handleTouchStart(e) {
+  if (submitted) return;
+  e.preventDefault();
+  touchCard = e.currentTarget;
+  touchId = touchCard.dataset.id;
+
+  touchClone = touchCard.cloneNode(true);
+  touchClone.style.position = "fixed";
+  touchClone.style.zIndex = 9999;
+  touchClone.style.opacity = 0.85;
+  touchClone.style.pointerEvents = "none";
+  touchClone.style.width = CARD_W + "px";
+  document.body.appendChild(touchClone);
+
+  const t = e.touches[0];
+  touchClone.style.left = (t.clientX - 60) + "px";
+  touchClone.style.top  = (t.clientY - 40) + "px";
+  touchCard.classList.add("dragging");
+}
+
+function handleTouchMove(e) {
+  e.preventDefault();
+  if (!touchClone) return;
+  const t = e.touches[0];
+  touchClone.style.left = (t.clientX - 60) + "px";
+  touchClone.style.top  = (t.clientY - 40) + "px";
+
+  document.querySelectorAll(".category-zone").forEach(z => {
+    const r = z.getBoundingClientRect();
+    z.classList.toggle("hover",
+      t.clientX >= r.left && t.clientX <= r.right &&
+      t.clientY >= r.top  && t.clientY <= r.bottom);
+  });
+}
+
+function handleTouchEnd(e) {
+  if (!touchClone || !touchCard) return;
+  const t = e.changedTouches[0];
+  document.querySelectorAll(".category-zone").forEach(z => {
+    z.classList.remove("hover");
+    const r = z.getBoundingClientRect();
+    if (t.clientX >= r.left && t.clientX <= r.right &&
+        t.clientY >= r.top  && t.clientY <= r.bottom) {
+      moveCardToZone(touchId, z.dataset.period);
+    }
+  });
+
+  touchClone.remove();
+  touchClone = null;
+  touchCard.classList.remove("dragging");
+  touchCard = null;
+  touchId = null;
+}
+
+/* ═══════ 向日葵往上拋射特效 ═══════ */
+function launchSunflowersFromCorners() {
+  const canvas = document.getElementById("sunflower-canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const W = canvas.width, H = canvas.height;
+  const sunflowers = [];
+  const COUNT = 80;
+
+  for (let i = 0; i < COUNT; i++) {
+    const startX = W * 0.15 + Math.random() * W * 0.7;
+    sunflowers.push({
+      x: startX,
+      y: H + 10,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -(10 + Math.random() * 8),
+      size: 14 + Math.random() * 18,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.1,
+      gravity: 0.15 + Math.random() * 0.05,
+      opacity: 1
+    });
+  }
+
+  let frame = 0;
+  const maxFrames = 240;
+
+  function drawSunflower(x, y, size, rotation, opacity) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.globalAlpha = opacity;
+
+    const petalCount = 12;
+    for (let i = 0; i < petalCount; i++) {
+      const angle = (i / petalCount) * Math.PI * 2;
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.ellipse(0, -size * 0.55, size * 0.22, size * 0.52, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#f5c518";
+      ctx.fill();
+      ctx.strokeStyle = "#d4a800";
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.28, 0, Math.PI * 2);
+    ctx.fillStyle = "#5a3e1b";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.18, 0, Math.PI * 2);
+    ctx.fillStyle = "#7a5e3b";
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+
+    sunflowers.forEach(s => {
+      s.x += s.vx;
+      s.y += s.vy;
+      s.vy += s.gravity;
+      s.vx *= 0.998;
+      s.rotation += s.rotSpeed;
+
+      if (frame > maxFrames - 60) {
+        s.opacity *= 0.96;
+      }
+
+      if (s.opacity > 0.01) {
+        drawSunflower(s.x, s.y, s.size, s.rotation, s.opacity);
+      }
+    });
+
+    frame++;
+    if (frame < maxFrames) {
+      requestAnimationFrame(animate);
+    } else {
+      ctx.clearRect(0, 0, W, H);
+    }
+  }
+
+  animate();
+}
+
+/* 啟動 */
+initGame();
+</script>
+
+</body>
+</html>

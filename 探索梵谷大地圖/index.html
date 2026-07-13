@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>探索梵谷大地圖</title>
+<style>
+@font-face{font-family:'ChenYuluoyan';src:url('https://github.com/Chenyu-otf/chenyuluoyan_thin/releases/download/v1.0/ChenYuluoyan-Thin.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh;color:#3b2f1e;background:#1a1a10;overflow-x:hidden}
+
+/* ══ 封面 ══ */
+#cover{position:fixed;inset:0;z-index:500;background:#000;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .8s}
+#cover.hide{opacity:0;pointer-events:none}
+#cover img{width:100%;height:100%;object-fit:contain}
+
+/* ══ 大地圖 ══ */
+#mapScreen{display:none;position:relative;width:100vw;height:100vh;overflow:hidden}
+#mapScreen.show{display:block}
+#mapImg{display:block;width:100%;height:100%;object-fit:contain}
+
+/* ══ 右上角資訊 ══ */
+.hud-info{position:fixed;top:14px;right:14px;z-index:100;display:flex;align-items:center;gap:10px}
+.cert-badge{background:rgba(255,248,220,.92);border:2px solid #d4a76a;border-radius:12px;padding:6px 14px;font-size:.9em;color:#5a3e1b}
+.reset-btn{padding:6px 14px;font-family:inherit;font-size:.85em;border:2px solid #c0a06a;border-radius:10px;background:rgba(255,248,220,.9);color:#7a5e3b;cursor:pointer}
+.reset-btn:active{transform:scale(.95)}
+
+/* ══ 透明熱區 ══ */
+.hotspot{position:absolute;transform:translate(-50%,-50%);width:14%;height:10%;cursor:pointer;border-radius:16px;transition:background .2s,box-shadow .2s;z-index:10}
+.hotspot:hover{background:rgba(255,248,220,.25);box-shadow:0 0 20px rgba(255,215,0,.35)}
+.hotspot:active{transform:translate(-50%,-50%) scale(.96)}
+/* 已通關印章 */
+.hotspot .stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));opacity:0;transition:opacity .3s}
+.hotspot.done .stamp{opacity:1}
+
+/* ══ Modal ══ */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fdf6e3;border-radius:24px;padding:28px 24px;max-width:420px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.3);position:relative;max-height:90vh;overflow-y:auto}
+.modal h2{text-align:center;font-size:1.5em;color:#5a3e1b;margin-bottom:16px}
+.modal-close{position:absolute;top:12px;right:16px;font-size:1.4em;cursor:pointer;color:#a08a6a;border:none;background:none}
+
+/* slots */
+.slots{display:flex;justify-content:center;gap:12px;margin-bottom:20px}
+.slot{width:90px;height:100px;border:3px dashed #c0a06a;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,248,220,.5);transition:all .2s}
+.slot .slot-label{font-size:.75em;color:#a08a6a;margin-top:4px}
+.slot.filled{border-style:solid;border-color:#27ae60;background:rgba(212,237,218,.4)}
+.slot.wrong{animation:slotShake .4s;border-color:#e74c3c}
+@keyframes slotShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* backpack in modal */
+.bp-label{text-align:center;font-size:.95em;color:#7a5e3b;margin-bottom:8px}
+.bp-items{display:flex;justify-content:center;gap:10px;min-height:70px;padding:10px;border:2px solid #e8d4b8;border-radius:14px;background:rgba(255,255,255,.5);flex-wrap:wrap}
+.bp-badge{width:64px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:2em;border-radius:12px;border:2px solid #d4a76a;background:rgba(255,248,220,.9);cursor:grab;user-select:none;touch-action:none;transition:transform .15s}
+.bp-badge:active{cursor:grabbing;transform:scale(1.1)}
+.bp-badge .badge-name{font-size:.35em;color:#7a5e3b;margin-top:2px}
+.bp-badge.placed{opacity:.3;pointer-events:none}
+
+/* drag ghost */
+.drag-ghost{position:fixed;z-index:999;pointer-events:none;font-size:2.8em;opacity:.85;transform:translate(-50%,-50%)}
+
+/* ══ 通關畫面 ══ */
+.victory-screen{display:none;position:fixed;inset:0;z-index:300;background:rgba(255,248,220,.97);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+.victory-screen.show{display:flex}
+.victory-screen h1{font-size:2.4em;color:#27ae60;margin-bottom:12px}
+.victory-screen .time{font-size:1.2em;color:#5a3e1b;margin-bottom:20px}
+.victory-screen .btn{padding:14px 36px;font-family:inherit;font-size:1.1em;border:none;border-radius:16px;cursor:pointer;background:linear-gradient(135deg,#f5c518,#e6a800);color:#5a3e1b;box-shadow:4px 4px 10px rgba(80,50,10,.2)}
+</style>
+</head>
+<body>
+
+<!-- ══ 封面 ══ -->
+<div id="cover"><img src="../cover.png" alt="探索梵谷"></div>
+
+<!-- ══ 大地圖 ══ -->
+<div id="mapScreen">
+  <img id="mapImg" src="../map-bg.png" alt="大地圖">
+
+  <!-- 透明熱區 -->
+  <div class="hotspot" id="hs_dynasty" style="left:20%;top:15%" onclick="location.href='../畫作與時期配對/index.html'">
+    <div class="stamp">✅</div>
+  </div>
+  <div class="hotspot" id="hs_idiom" style="left:81%;top:20%" onclick="location.href='../梵谷達人/index.html'">
+    <div class="stamp">✅</div>
+  </div>
+  <div class="hotspot" id="hs_warrior" style="left:25%;top:80.2%" onclick="location.href='../梵谷與我/index.html'">
+    <div class="stamp">✅</div>
+  </div>
+  <div class="hotspot" id="hs_gate" style="left:45.2%;top:62.2%" onclick="openGate()">
+    <div class="stamp">✅</div>
+  </div>
+
+  <!-- 右上角 -->
+  <div class="hud-info">
+    <div class="cert-badge">持有 <span id="certCount">0</span> / 3</div>
+    <button class="reset-btn" onclick="resetProgress()">🔄 清除進度</button>
+  </div>
+</div>
+
+<!-- ══ Gate Modal ══ -->
+<div class="modal-overlay" id="gateModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeGate()">✕</button>
+    <h2>🔓 解開大門</h2>
+    <p style="text-align:center;font-size:.9em;color:#7a5e3b;margin-bottom:14px">把憑證拖到對應的凹槽</p>
+    <div class="slots" id="slotsBox"></div>
+    <div class="bp-label">🎒 背包</div>
+    <div class="bp-items" id="bpBox"></div>
+  </div>
+</div>
+
+<!-- ══ Victory ══ -->
+<div class="victory-screen" id="victoryScreen">
+  <h1>🎨 探索完成！</h1>
+  <p style="font-size:1.1em;color:#5a3e1b;margin-bottom:8px">你已完成所有關卡，解開了梵谷的藝術密碼</p>
+  <div class="time">總探索時長：<span id="victoryTime"></span></div>
+  <button class="btn" onclick="resetAll()">再次探索</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   關卡資料
+   ══════════════════════════════════════ */
+var LEVELS = [
+  { id: "dynasty", key: "cert_dynasty", link: "../畫作與時期配對/index.html", badge: "🌻", badgeName: "向日葵之印", hsId: "hs_dynasty" },
+  { id: "idiom",   key: "cert_idiom",   link: "../梵谷達人/index.html",      badge: "⭐", badgeName: "星星之印",  hsId: "hs_idiom" },
+  { id: "warrior", key: "cert_warrior", link: "../梵谷與我/index.html",       badge: "🌲", badgeName: "柏樹之印",  hsId: "hs_warrior" }
+];
+var SLOT_IDS = ["dynasty","idiom","warrior"];
+var placed = {};
+
+/* ══════════════════════════════════════
+   封面
+   ══════════════════════════════════════ */
+function initCover() {
+  var cover = document.getElementById("cover");
+  if (sessionStorage.getItem("cover_seen")) {
+    cover.style.display = "none";
+    showMap();
+  } else {
+    cover.addEventListener("click", function() {
+      cover.classList.add("hide");
+      sessionStorage.setItem("cover_seen", "1");
+      setTimeout(function() { cover.style.display = "none"; showMap(); }, 800);
+    });
+  }
+}
+
+function showMap() {
+  document.getElementById("mapScreen").classList.add("show");
+  refreshStatus();
+}
+
+/* ══════════════════════════════════════
+   狀態
+   ══════════════════════════════════════ */
+function isDone(level) { return localStorage.getItem(level.key) === "1"; }
+
+function refreshStatus() {
+  var n = 0;
+  LEVELS.forEach(function(lv) {
+    if (isDone(lv)) {
+      n++;
+      var hs = document.getElementById(lv.hsId);
+      if (hs) hs.classList.add("done");
+    }
+  });
+  document.getElementById("certCount").textContent = n;
+}
+
+function resetProgress() {
+  if (!confirm("確定要清除所有進度嗎？")) return;
+  LEVELS.forEach(function(lv) { localStorage.removeItem(lv.key); });
+  localStorage.removeItem("adventure_start");
+  location.reload();
+}
+
+/* ══════════════════════════════════════
+   通關大門 Modal
+   ══════════════════════════════════════ */
+function openGate() {
+  placed = {};
+  document.getElementById("gateModal").classList.add("open");
+  renderSlots();
+  renderBp();
+}
+
+function closeGate() {
+  document.getElementById("gateModal").classList.remove("open");
+}
+
+function renderSlots() {
+  var box = document.getElementById("slotsBox");
+  box.innerHTML = "";
+  SLOT_IDS.forEach(function(sid) {
+    var lv = LEVELS.find(function(l){return l.id===sid});
+    var div = document.createElement("div");
+    div.className = "slot";
+    div.id = "slot_" + sid;
+    div.setAttribute("data-accept", sid);
+    div.innerHTML = '<span>' + lv.badge + '</span><span class="slot-label">' + lv.badgeName + '</span>';
+    box.appendChild(div);
+  });
+}
+
+function renderBp() {
+  var box = document.getElementById("bpBox");
+  box.innerHTML = "";
+  LEVELS.forEach(function(lv) {
+    if (!isDone(lv)) return;
+    if (placed[lv.id]) return;
+    var badge = document.createElement("div");
+    badge.className = "bp-badge";
+    badge.id = "badge_" + lv.id;
+    badge.setAttribute("data-cert", lv.id);
+    badge.innerHTML = lv.badge + '<span class="badge-name">' + lv.badgeName + '</span>';
+    box.appendChild(badge);
+    addDragListeners(badge);
+  });
+}
+
+/* ══════════════════════════════════════
+   拖曳系統（滑鼠 + 觸控）
+   ══════════════════════════════════════ */
+var dragData = null;
+var ghost = null;
+
+function addDragListeners(el) {
+  el.addEventListener("mousedown", function(e) { startDrag(el, e.clientX, e.clientY); e.preventDefault(); });
+  el.addEventListener("touchstart", function(e) { var t=e.touches[0]; startDrag(el, t.clientX, t.clientY); e.preventDefault(); }, {passive:false});
+}
+
+function startDrag(el, x, y) {
+  dragData = el.getAttribute("data-cert");
+  ghost = document.createElement("div");
+  ghost.className = "drag-ghost";
+  ghost.textContent = el.textContent.trim().charAt(0);
+  ghost.style.left = x + "px";
+  ghost.style.top = y + "px";
+  document.body.appendChild(ghost);
+  el.style.opacity = ".4";
+}
+
+document.addEventListener("mousemove", function(e) { moveGhost(e.clientX, e.clientY); });
+document.addEventListener("touchmove", function(e) { if(ghost){var t=e.touches[0];moveGhost(t.clientX,t.clientY);e.preventDefault();} }, {passive:false});
+
+function moveGhost(x, y) {
+  if (!ghost) return;
+  ghost.style.left = x + "px";
+  ghost.style.top = y + "px";
+}
+
+document.addEventListener("mouseup", function(e) { endDrag(e.clientX, e.clientY); });
+document.addEventListener("touchend", function(e) {
+  if (!ghost) return;
+  var t = e.changedTouches[0];
+  endDrag(t.clientX, t.clientY);
+});
+
+function endDrag(x, y) {
+  if (!ghost || !dragData) return;
+  var certId = dragData;
+  var badge = document.getElementById("badge_" + certId);
+  ghost.remove(); ghost = null; dragData = null;
+  if (badge) badge.style.opacity = "";
+
+  var slotEl = document.elementFromPoint(x, y);
+  while (slotEl && !slotEl.classList.contains("slot")) slotEl = slotEl.parentElement;
+  if (!slotEl) return;
+
+  var acceptId = slotEl.getAttribute("data-accept");
+  if (certId === acceptId) {
+    slotEl.classList.add("filled");
+    placed[certId] = true;
+    if (badge) badge.classList.add("placed");
+    var lv = LEVELS.find(function(l){return l.id===certId});
+    slotEl.innerHTML = '<span style="font-size:2em">' + lv.badge + '</span><span class="slot-label" style="color:#27ae60">✓</span>';
+    checkAllSlots();
+  } else {
+    slotEl.classList.add("wrong");
+    setTimeout(function(){ slotEl.classList.remove("wrong"); }, 500);
+  }
+}
+
+function checkAllSlots() {
+  var allFilled = SLOT_IDS.every(function(sid){ return placed[sid]; });
+  if (allFilled) {
+    setTimeout(showVictory, 600);
+  }
+}
+
+/* ══════════════════════════════════════
+   通關畫面
+   ══════════════════════════════════════ */
+function checkVictory() {
+  var all = LEVELS.every(function(lv){ return isDone(lv); });
+  if (all) {
+    var start = parseInt(localStorage.getItem("adventure_start") || Date.now());
+    var elapsed = Math.floor((Date.now() - start) / 1000);
+    var mm = Math.floor(elapsed / 60);
+    var ss = elapsed % 60;
+    document.getElementById("victoryTime").textContent = mm + " 分 " + ss + " 秒";
+    document.getElementById("victoryScreen").classList.add("show");
+  }
+}
+
+function showVictory() {
+  closeGate();
+  checkVictory();
+}
+
+function resetAll() {
+  LEVELS.forEach(function(lv) { localStorage.removeItem(lv.key); });
+  localStorage.removeItem("adventure_start");
+  sessionStorage.removeItem("cover_seen");
+  document.getElementById("victoryScreen").classList.remove("show");
+  location.reload();
+}
+
+/* ══ 啟動 ══ */
+initCover();
+</script>
+</body>
+</html>

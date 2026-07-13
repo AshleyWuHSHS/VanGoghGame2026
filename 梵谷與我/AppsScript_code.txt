@@ -1,0 +1,54 @@
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+
+    var studentId = String(data.id || "").trim();
+    var className = String(data.cls || "").trim();
+    var seat      = String(data.seat || "").trim();
+    var name      = String(data.name || "").trim();
+    var fileName  = String(data.fileName || "");
+    var fileType  = String(data.fileType || "application/octet-stream");
+    var fileData  = String(data.fileData || "");
+
+    if (!studentId || !className || !seat || !name || !fileData) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ status: "error", msg: "欄位不完整" })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var ext = "bin";
+    var dotIdx = fileName.lastIndexOf(".");
+    if (dotIdx > 0) ext = fileName.substring(dotIdx + 1);
+
+    var newFileName = studentId + "_" + className + "_" + seat + "_" + name + "." + ext;
+
+    var base64 = fileData.indexOf(",") >= 0 ? fileData.split(",")[1] : fileData;
+    var decoded = Utilities.base64Decode(base64);
+    var blob = Utilities.newBlob(decoded, fileType, newFileName);
+
+    var folder = DriveApp.getFolderById("1K-rf2nvzV26qamFjDORPiKNpKAR7tjvW");
+    var file = folder.createFile(blob);
+    var fileUrl = file.getUrl();
+
+    var sheet = SpreadsheetApp.openById("10WH-SDE8VyU9bTI4S-QDUs-JeAOw0qN8mHCneOYZydw").getActiveSheet();
+    sheet.appendRow([
+      new Date(),
+      className,
+      seat,
+      studentId,
+      name,
+      fileName,
+      newFileName,
+      fileUrl
+    ]);
+
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: "ok", msg: "上傳成功", url: fileUrl })
+    ).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: "error", msg: err.toString() })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}

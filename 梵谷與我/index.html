@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梵谷與我</title>
+<style>
+@font-face{font-family:'ChenYuluoyan';src:url('https://github.com/Chenyu-otf/chenyuluoyan_thin/releases/download/v1.0/ChenYuluoyan-Thin.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;color:#3b2f1e;position:relative;padding:20px}
+#bg{position:fixed;inset:0;z-index:-2;background:url('../各時期畫作/阿爾時期_阿爾的畫室.png') center/cover no-repeat}
+#bg::after{content:'';position:absolute;inset:0;background:rgba(255,248,220,.75)}
+.card{position:relative;z-index:1;background:rgba(255,253,245,.93);border-radius:24px;padding:36px 32px;max-width:480px;width:100%;box-shadow:0 8px 32px rgba(80,50,10,.2);border:3px solid #d4a76a}
+h1{text-align:center;font-size:2.2em;color:#5a3e1b;margin-bottom:6px;text-shadow:2px 2px 0 rgba(255,255,255,.5)}
+.subtitle{text-align:center;font-size:1.05em;color:#7a5e3b;margin-bottom:28px;line-height:1.6}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:1em;color:#5a3e1b;margin-bottom:5px}
+.field input{width:100%;padding:12px 14px;border:2px solid #d4a76a;border-radius:12px;font-family:inherit;font-size:1em;background:rgba(255,248,220,.6);color:#3b2f1e;outline:none;transition:border-color .2s}
+.field input:focus{border-color:#8b5e3c}
+.upload-zone{border:2px dashed #c0a06a;border-radius:16px;padding:28px 16px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(255,248,220,.4);margin-bottom:8px;position:relative}
+.upload-zone:hover,.upload-zone.dragover{border-color:#8b5e3c;background:rgba(245,197,24,.12)}
+.upload-zone .icon{font-size:2.6em;margin-bottom:6px}
+.upload-zone p{color:#7a5e3b;font-size:.95em;line-height:1.5}
+.upload-zone .hint{font-size:.82em;color:#a08a6a;margin-top:6px}
+.upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.preview{margin-top:12px;text-align:center;display:none}
+.preview img{max-width:100%;max-height:200px;border-radius:10px;border:2px solid #d4a76a}
+.preview .fname{margin-top:6px;font-size:.9em;color:#5a3e1b}
+.preview .remove{display:inline-block;margin-top:6px;padding:4px 14px;font-family:inherit;font-size:.85em;border:none;border-radius:8px;background:#e74c3c;color:#fff;cursor:pointer}
+.submit-btn{width:100%;padding:14px;font-family:inherit;font-size:1.15em;border:none;border-radius:16px;cursor:pointer;margin-top:18px;background:linear-gradient(135deg,#f5c518,#e6a800);color:#5a3e1b;box-shadow:4px 4px 10px rgba(80,50,10,.2);letter-spacing:3px;transition:transform .12s}
+.submit-btn:active{transform:scale(.97)}
+.submit-btn:disabled{opacity:.45;cursor:default;transform:none}
+.toast{position:fixed;top:30px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:14px;font-size:1em;z-index:999;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.ok{background:rgba(39,174,96,.92);color:#fff}
+.toast.err{background:rgba(192,57,43,.92);color:#fff}
+.back-map{position:fixed;top:14px;left:14px;z-index:9998;padding:8px 16px;font-family:inherit;font-size:.9em;border:2px solid #c0a06a;border-radius:10px;background:rgba(255,248,220,.92);color:#5a3e1b;cursor:pointer;text-decoration:none}
+.back-map:active{transform:scale(.95)}
+@media(max-width:500px){.card{padding:28px 20px}h1{font-size:1.8em}}
+</style>
+</head>
+<body>
+<a class="back-map" href="../探索梵谷大地圖/index.html">← 回到大地圖</a>
+<div id="bg"></div>
+<div class="toast" id="toast"></div>
+<div class="card">
+  <h1>梵谷與我</h1>
+  <p class="subtitle">請上傳老師指定的作品</p>
+  <form id="uploadForm">
+    <div class="field"><label>學號</label><input type="text" id="fId" placeholder="例：123456" required></div>
+    <div class="field"><label>班級</label><input type="text" id="fClass" placeholder="例：701" required></div>
+    <div class="field"><label>座號</label><input type="number" id="fSeat" placeholder="例：15" min="1" max="99" required></div>
+    <div class="field"><label>姓名</label><input type="text" id="fName" placeholder="例：王小明" required></div>
+    <div class="upload-zone" id="dropZone">
+      <div class="icon">📁</div>
+      <p>點擊或拖曳檔案至此</p>
+      <div class="hint">支援 JPG、PNG、PDF、Word（.doc / .docx）</div>
+      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+    </div>
+    <div class="preview" id="preview">
+      <img id="previewImg" src="">
+      <div class="fname" id="fileName"></div>
+      <button type="button" class="remove" id="removeBtn">移除檔案</button>
+    </div>
+    <button type="submit" class="submit-btn" id="submitBtn" disabled>上傳作品</button>
+  </form>
+</div>
+<script>
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmMX0ivsWyNCtyPdPUh9W5ZFu1zZInJf4rb6l0FZgGopNJKvSBjoYG2xAhgJB9VFv8vw/exec";
+
+var MAX_SIZE = 10 * 1024 * 1024;
+var ALLOWED = ["image/jpeg","image/png","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+var selectedFile = null;
+var dropZone = document.getElementById("dropZone");
+var fileInput = document.getElementById("fileInput");
+var previewEl = document.getElementById("preview");
+var submitBtn = document.getElementById("submitBtn");
+
+fileInput.addEventListener("change", function(e) { if (e.target.files[0]) pickFile(e.target.files[0]); });
+dropZone.addEventListener("dragover", function(e) { e.preventDefault(); dropZone.classList.add("dragover"); });
+dropZone.addEventListener("dragleave", function() { dropZone.classList.remove("dragover"); });
+dropZone.addEventListener("drop", function(e) { e.preventDefault(); dropZone.classList.remove("dragover"); if (e.dataTransfer.files[0]) pickFile(e.dataTransfer.files[0]); });
+document.getElementById("removeBtn").addEventListener("click", removeFile);
+document.getElementById("uploadForm").addEventListener("submit", handleSubmit);
+
+function pickFile(f) {
+  if (ALLOWED.indexOf(f.type) === -1) { toast("此檔案格式不接受，請上傳 JPG、PNG、PDF 或 Word", "err"); return; }
+  if (f.size > MAX_SIZE) { toast("檔案太大（上限 10MB）", "err"); return; }
+  selectedFile = f;
+  document.getElementById("fileName").textContent = f.name;
+  var img = document.getElementById("previewImg");
+  if (f.type.indexOf("image/") === 0) { img.src = URL.createObjectURL(f); img.style.display = "block"; }
+  else { img.style.display = "none"; }
+  previewEl.style.display = "block";
+  dropZone.querySelector("p").textContent = "已選擇檔案";
+  submitBtn.disabled = false;
+}
+
+function removeFile() {
+  selectedFile = null; fileInput.value = "";
+  previewEl.style.display = "none";
+  dropZone.querySelector("p").textContent = "點擊或拖曳檔案至此";
+  submitBtn.disabled = true;
+}
+
+function handleSubmit(e) {
+  e.preventDefault();
+  if (!selectedFile) return;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "上傳中…";
+
+  var cls  = document.getElementById("fClass").value.trim();
+  var seat = document.getElementById("fSeat").value.trim();
+  var sid  = document.getElementById("fId").value.trim();
+  var name = document.getElementById("fName").value.trim();
+
+  var reader = new FileReader();
+  reader.onload = function() {
+    var payload = {
+      cls: cls, seat: seat, id: sid, name: name,
+      fileName: selectedFile.name,
+      fileType: selectedFile.type,
+      fileData: reader.result
+    };
+    fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).then(function(res) { return res.json(); }).then(function(res) {
+      if (res.status === "ok") {
+        toast("上傳成功！", "ok");
+        localStorage.setItem("cert_warrior", "1");
+        document.getElementById("uploadForm").reset();
+        removeFile();
+        submitBtn.textContent = "上傳作品";
+      } else {
+        toast("失敗：" + res.msg, "err");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "上傳作品";
+      }
+    }).catch(function(err) {
+      toast("上傳失敗：" + err, "err");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "上傳作品";
+    });
+  };
+  reader.readAsDataURL(selectedFile);
+}
+
+function toast(msg, type) {
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.className = "toast show " + type;
+  setTimeout(function() { t.className = "toast"; }, 2500);
+}
+</script>
+</body>
+</html>

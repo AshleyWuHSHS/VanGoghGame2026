@@ -1,0 +1,40 @@
+梵谷達人 — 製作規格
+一、基本架構
+單一 HTML 檔案，無外部框架或套件
+位置：2026 擁抱梵谷/梵谷達人/index.html
+二、視覺風格
+字體：辰宇落雁體（@font-face 從 https://github.com/Chenyu-otf/chenyuluoyan_thin/releases/download/v1.0/ChenYuluoyan-Thin.ttf 載入）
+色調：暖棕色系，背景色 rgba(255,248,220,0.82)，主色 #5a3e1b、#8b5e3c
+按鈕：圓角 16px，有立體陰影，三種顏色（金色、紅色、綠色、棕色）
+卡片：圓角 18px，半透明白底，棕色邊框 3px，外陰影
+背景圖：../徽章圖檔/麥穗與烏鴉.png，fixed + cover，上覆半透明遮罩
+三、遊戲機制
+3 關依序：畫具 🖌️ → 畫室 🏚️ → 資金 💰，每關 HP 100
+答對：物品 -25 HP + 玩家拿 10 金幣
+答錯：物品攻擊玩家 -25 HP + toast 顯示正確答案 2 秒
+攻擊水晶（道具）：下一題答對暴擊 -50 HP
+擊敗獎勵：20~50 隨機金幣
+死亡機制：HP 歸零時，有救命符→消耗復活至 HP 1，無符→HP=1 重來該關，HP=1 又死→Game Over
+四、題庫
+來源：Google Sheets CSV https://docs.google.com/spreadsheets/d/1I-j1xIzR7GQ7YkBK4WjSOeyOCxRqGgr3/export?format=csv&gid=2103145626
+備用載入：Google Visualization API JSONP（gviz/tq?tqx=responseHandler:callback）
+CSV 欄位：題號, 題目, 正確答案(A/B/C/D), 選項A, 選項B, 選項C, 選項D
+題目隨機抽取，用過不重複直到用完
+五、商店（每關之間自動進入）
+道具	價格	效果
+🧪 紅藥水	30 金	補 50 HP
+💎 攻擊水晶	40 金	下一題暴擊 -50 HP
+🛡️ 救命符	80 金	HP 歸零自動復活至 1
+六、背包
+戰鬥中隨時可開，可使用紅藥水補血、攻擊水晶裝備暴擊
+七、HUD（頂部固定列）
+左側：玩家 HP 血條（綠→黃→紅+閃爍）
+右側：關卡進度、金幣數（跳動動畫）
+八、畫面流程
+標題 → Loading → 戰鬥 → 商店 → 戰鬥 → 商店 → 戰鬥 → 通關
+                                              ↘ Game Over（任何關卡 HP=1 再死）
+九、動畫效果
+敵人浮動、選項 hover 上移、答錯抖動、答對閃綠
+暴擊紅色全螢幕閃爍 + CRITICAL 大字
+金幣數字跳動
+Toast 通知（自動消失）

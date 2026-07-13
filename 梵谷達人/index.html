@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梵谷達人</title>
+<style>
+@font-face{font-family:'ChenYuluoyan';src:url('https://github.com/Chenyu-otf/chenyuluoyan_thin/releases/download/v1.0/ChenYuluoyan-Thin.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh;overflow-x:hidden;color:#3b2f1e}
+
+/* ══ 背景 ══ */
+#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;background:url('../徽章圖檔/麥穗與烏鴉.png') center/cover no-repeat}
+#bg::after{content:'';position:absolute;inset:0;background:rgba(255,248,220,0.82)}
+
+/* ══ 共用按鈕 ══ */
+.btn{display:inline-block;padding:14px 36px;font-family:inherit;font-size:1.15em;border:none;border-radius:16px;cursor:pointer;letter-spacing:2px;transition:transform .12s,box-shadow .12s;box-shadow:4px 4px 10px rgba(80,50,10,.25),-2px -2px 6px rgba(255,255,255,.3);position:relative}
+.btn:active{transform:scale(.96)}
+.btn-gold{background:linear-gradient(135deg,#f5c518,#e6a800);color:#5a3e1b}
+.btn-red{background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff}
+.btn-green{background:linear-gradient(135deg,#5cb85c,#449d44);color:#fff}
+.btn-brown{background:linear-gradient(135deg,#8b5e3c,#a0704e);color:#fff}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+
+/* ══ 標題畫面 ══ */
+#titleScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:20px}
+#titleScreen h1{font-size:3em;color:#5a3e1b;text-shadow:3px 3px 0 rgba(255,255,255,.5);margin-bottom:10px}
+#titleScreen p{font-size:1.1em;color:#7a5e3b;margin-bottom:30px;max-width:500px}
+
+/* ══ Loading ══ */
+#loadingScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
+.spinner{width:50px;height:50px;border:6px solid #e8d4b8;border-top-color:#8b5e3c;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadingScreen p{margin-top:16px;font-size:1.1em;color:#5a3e1b}
+
+/* ══ HUD ══ */
+.hud{position:fixed;top:0;left:0;right:0;display:none;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(90,62,27,.88);color:#fff;z-index:100;gap:10px;flex-wrap:wrap}
+.hud-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.hud-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.player-label{font-size:.95em;white-space:nowrap}
+.hp-bar-wrap{flex:1;max-width:200px;height:22px;background:#3b2f1e;border-radius:11px;overflow:hidden;border:2px solid rgba(255,255,255,.3)}
+.hp-bar{height:100%;background:#5cb85c;transition:width .4s,border-radius .2s;border-radius:11px}
+.hp-bar.mid{background:#f0ad4e}
+.hp-bar.low{background:#e74c3c;animation:blink .5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.hp-text{font-size:.85em;min-width:60px;text-align:center}
+.coin-display{font-size:1.15em;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.coin-display .num{transition:transform .2s;display:inline-block}
+.coin-display .num.pop{animation:coinPop .3s}
+@keyframes coinPop{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}}
+.stage-label{font-size:.9em;opacity:.8;white-space:nowrap}
+
+/* ══ 戰鬥畫面 ══ */
+#battleScreen{display:none;padding:90px 16px 100px;max-width:600px;margin:0 auto}
+.battle-field{text-align:center;margin-bottom:16px}
+.enemy-area{margin-bottom:20px}
+.enemy-emoji{font-size:4em;display:block;margin-bottom:4px;animation:float 2s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.enemy-name{font-size:1.1em;color:#5a3e1b;margin-bottom:6px}
+.enemy-hp-wrap{width:80%;max-width:260px;height:18px;background:#3b2f1e;border-radius:9px;overflow:hidden;margin:0 auto 4px;border:2px solid rgba(90,62,27,.3)}
+.enemy-hp{height:100%;background:#e74c3c;transition:width .4s;border-radius:9px}
+.enemy-hp-text{font-size:.8em;color:#5a3e1b}
+
+.vs-text{font-size:1.6em;color:#c0392b;margin:10px 0;text-shadow:2px 2px 0 rgba(255,255,255,.5)}
+
+.question-box{background:rgba(255,255,255,.92);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 4px 16px rgba(80,50,10,.15);border:3px solid #d4a76a}
+.question-box h3{font-size:1.05em;color:#5a3e1b;margin-bottom:14px;line-height:1.5}
+
+.options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt-btn{padding:14px 10px;font-family:inherit;font-size:1em;border:3px solid #d4a76a;border-radius:14px;background:rgba(255,248,220,.95);color:#3b2f1e;cursor:pointer;transition:all .15s;line-height:1.4;text-align:left}
+.opt-btn:hover{background:#f5e6c8;border-color:#8b5e3c;transform:translateY(-2px)}
+.opt-btn:disabled{cursor:default;transform:none}
+.opt-btn.correct-flash{background:#d4edda;border-color:#27ae60;animation:flashGreen .2s}
+.opt-btn.wrong-flash{background:#f8d7da;border-color:#e74c3c;animation:shake .3s}
+@keyframes flashGreen{0%{background:#27ae60}100%{background:#d4edda}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+.critical-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(231,76,60,.25);z-index:200;animation:critFlash .4s forwards;pointer-events:none}
+.critical-overlay span{font-size:3em;color:#c0392b;text-shadow:3px 3px 0 #fff;animation:critScale .4s}
+@keyframes critFlash{0%{opacity:1}100%{opacity:0}}
+@keyframes critScale{0%{transform:scale(0.5)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+/* ══ 戰鬥中背包 ══ */
+.battle-backpack{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;padding:10px;z-index:100}
+
+/* ══ 背包面板 ══ */
+.bp-panel{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(255,248,220,.97);border:3px solid #8b5e3c;border-radius:18px;padding:16px 20px;display:none;z-index:150;min-width:260px;box-shadow:0 -4px 20px rgba(80,50,10,.25)}
+.bp-panel h3{text-align:center;color:#5a3e1b;margin-bottom:10px;font-size:1.05em}
+.bp-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e8d4b8}
+.bp-item:last-child{border-bottom:none}
+.bp-item .info{display:flex;align-items:center;gap:8px}
+.bp-item .qty{color:#8b5e3c;font-weight:bold}
+.bp-use-btn{padding:6px 14px;font-family:inherit;font-size:.85em;border:none;border-radius:10px;cursor:pointer;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff}
+.bp-use-btn:disabled{opacity:.4;cursor:default}
+
+/* ══ 商店 ══ */
+#shopScreen{display:none;padding:90px 16px 40px;max-width:600px;margin:0 auto}
+.shop-title{text-align:center;font-size:1.6em;color:#5a3e1b;margin-bottom:6px}
+.shop-subtitle{text-align:center;color:#7a5e3b;margin-bottom:20px}
+.shop-items{display:flex;flex-direction:column;gap:14px;margin-bottom:24px}
+.shop-card{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.9);border:3px solid #d4a76a;border-radius:16px;padding:16px;box-shadow:0 3px 10px rgba(80,50,10,.12)}
+.shop-card .icon{font-size:2.4em;flex-shrink:0}
+.shop-card .detail{flex:1}
+.shop-card .detail h4{color:#5a3e1b;margin-bottom:2px}
+.shop-card .detail p{font-size:.85em;color:#7a5e3b}
+.shop-card .price{font-size:1.05em;color:#e6a800;font-weight:bold;white-space:nowrap}
+.shop-card .buy-btn{padding:8px 18px;font-family:inherit;font-size:.95em;border:none;border-radius:12px;cursor:pointer;background:linear-gradient(135deg,#f5c518,#e6a800);color:#5a3e1b;box-shadow:2px 2px 6px rgba(80,50,10,.2);white-space:nowrap}
+.shop-card .buy-btn:disabled{opacity:.4;cursor:default}
+.shop-card .bought{color:#27ae60;font-weight:bold;font-size:.95em}
+.shop-bottom{text-align:center}
+
+/* ══ 通關 / Game Over ══ */
+#endScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:30px 20px}
+#endScreen h1{font-size:2.4em;margin-bottom:16px;text-shadow:2px 2px 0 rgba(255,255,255,.4)}
+#endScreen .stats{font-size:1.15em;color:#5a3e1b;margin-bottom:8px;line-height:1.8}
+#endScreen .btn{margin-top:20px}
+.victory-title{color:#27ae60}
+.gameover-title{color:#c0392b}
+.gameover-bg{background:rgba(192,57,43,.08)}
+
+/* ══ 通知彈窗 ══ */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(90,62,27,.92);color:#fff;padding:10px 24px;border-radius:14px;font-size:1em;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.toast-green{background:rgba(39,174,96,.92)}
+.toast.toast-red{background:rgba(192,57,43,.92)}
+.toast.toast-gold{background:rgba(230,168,0,.92);color:#5a3e1b}
+
+.back-map{position:fixed;top:14px;left:14px;z-index:9998;padding:8px 16px;font-family:inherit;font-size:.9em;border:2px solid #c0a06a;border-radius:10px;background:rgba(255,248,220,.92);color:#5a3e1b;cursor:pointer;text-decoration:none}
+.back-map:active{transform:scale(.95)}
+
+@media(max-width:500px){
+  .options{grid-template-columns:1fr}
+  #titleScreen h1{font-size:2.2em}
+}
+</style>
+</head>
+<body>
+<a class="back-map" href="../探索梵谷大地圖/index.html">← 回到大地圖</a>
+<div id="bg"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ══ 標題 ══ -->
+<div id="titleScreen">
+  <h1>🎨 梵谷達人</h1>
+  <p>化身為梵谷，穿越他的藝術生涯！<br>答對問題擊敗敌人，收集金幣購買道具，<br>挑戰成為真正的繪畫大師！</p>
+  <button class="btn btn-gold" onclick="startGame()">開始冒險</button>
+</div>
+
+<!-- ══ Loading ══ -->
+<div id="loadingScreen">
+  <div class="spinner"></div>
+  <p id="loadingText">正在載入題庫...</p>
+</div>
+
+<!-- ══ HUD ══ -->
+<div class="hud" id="hud">
+  <div class="hud-left">
+    <span class="player-label">🎨 畫家</span>
+    <div class="hp-bar-wrap"><div class="hp-bar" id="playerHpBar"></div></div>
+    <span class="hp-text" id="playerHpText"></span>
+  </div>
+  <div class="hud-right">
+    <span class="stage-label" id="stageLabel"></span>
+    <span class="coin-display">💰 <span class="num" id="coinNum">0</span></span>
+  </div>
+</div>
+
+<!-- ══ 戰鬥 ══ -->
+<div id="battleScreen">
+  <div class="battle-field">
+    <div class="enemy-area">
+      <span class="enemy-emoji" id="enemyEmoji"></span>
+      <div class="enemy-name" id="enemyName"></div>
+      <div class="enemy-hp-wrap"><div class="enemy-hp" id="enemyHpBar"></div></div>
+      <div class="enemy-hp-text" id="enemyHpText"></div>
+    </div>
+    <div class="vs-text">⚔️ VS ⚔️</div>
+    <div class="question-box">
+      <h3 id="questionText"></h3>
+      <div class="options" id="optionsBox"></div>
+    </div>
+  </div>
+  <div class="battle-backpack">
+    <button class="btn btn-brown" onclick="toggleBp()" style="padding:10px 24px;font-size:.95em">🎒 背包</button>
+  </div>
+</div>
+
+<!-- ══ 背包面板 ══ -->
+<div class="bp-panel" id="bpPanel">
+  <h3>🎒 背包</h3>
+  <div id="bpItems"></div>
+  <div style="text-align:center;margin-top:10px"><button class="btn btn-brown" onclick="toggleBp()" style="padding:6px 20px;font-size:.9em">關閉</button></div>
+</div>
+
+<!-- ══ 商店 ══ -->
+<div id="shopScreen">
+  <div class="shop-title">🏪 道具商店</div>
+  <div class="shop-subtitle">選購道具強化你的冒險！</div>
+  <div style="text-align:center;font-size:1.15em;color:#5a3e1b;margin-bottom:16px">💰 <span id="shopCoins">0</span></div>
+  <div class="shop-items" id="shopItems"></div>
+  <div class="shop-bottom">
+    <button class="btn btn-gold" onclick="leaveShop()">繼續冒險 ➜</button>
+  </div>
+</div>
+
+<!-- ══ 結束 ══ -->
+<div id="endScreen"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   題庫
+   ══════════════════════════════════════════ */
+const CSV_URL = "https://docs.google.com/spreadsheets/d/1I-j1xIzR7GQ7YkBK4WjSOeyOCxRqGgr3/export?format=csv&gid=2103145626";
+const GVIZ_URL = "https://docs.google.com/spreadsheets/d/1I-j1xIzR7GQ7YkBK4WjSOeyOCxRqGgr3/gviz/tq?gid=2103145626";
+
+let allQuestions = [];
+
+/* ══════════════════════════════════════════
+   解析 CSV
+   ══════════════════════════════════════════ */
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map(s => s.trim());
+    if (cols.length < 7 || !cols[1]) continue;
+    const answerLetter = cols[2].toUpperCase();
+    const opts = [cols[3], cols[4], cols[5], cols[6]].filter(o => o && o !== "空");
+    if (opts.length < 2) continue;
+    const letterMap = { A: 3, B: 4, C: 5, D: 6 };
+    const correctText = cols[letterMap[answerLetter]] || opts[0];
+    rows.push({ q: cols[1], a: correctText, opts });
+  }
+  return rows;
+}
+
+/* ══════════════════════════════════════════
+   JSONP fallback（file:// 不能 fetch 時用）
+   ══════════════════════════════════════════ */
+function loadViaJsonp() {
+  return new Promise((resolve, reject) => {
+    const cbName = "_gvizCb_" + Date.now();
+    const script = document.createElement("script");
+    const timer = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, 12000);
+    function cleanup() { clearTimeout(timer); delete window[cbName]; script.remove(); }
+    window[cbName] = function(resp) {
+      cleanup();
+      try {
+        const rows = resp.table.rows.map(r => r.c.map(c => c ? String(c.v) : ""));
+        const parsed = [];
+        for (const cols of rows) {
+          if (cols.length < 7 || !cols[1]) continue;
+          const answerLetter = cols[2].trim().toUpperCase();
+          const opts = [cols[3], cols[4], cols[5], cols[6]].filter(o => o && o !== "空");
+          if (opts.length < 2) continue;
+          const letterMap = { A: 3, B: 4, C: 5, D: 6 };
+          const correctText = cols[letterMap[answerLetter]] || opts[0];
+          parsed.push({ q: cols[1], a: correctText, opts });
+        }
+        resolve(parsed);
+      } catch (e) { reject(e); }
+    };
+    script.src = GVIZ_URL + "&tqx=responseHandler:" + cbName;
+    script.onerror = () => { cleanup(); reject(new Error("script error")); };
+    document.head.appendChild(script);
+  });
+}
+
+/* ══════════════════════════════════════════
+   載入題庫（先 fetch，失敗用 JSONP）
+   ══════════════════════════════════════════ */
+async function loadQuestions() {
+  try {
+    const resp = await fetch(CSV_URL + "&t=" + Date.now());
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const text = await resp.text();
+    const parsed = parseCSV(text);
+    if (parsed.length > 0) return parsed;
+    throw new Error("解析為空");
+  } catch (e) {
+    console.warn("fetch 失敗，嘗試 JSONP:", e);
+    const parsed = await loadViaJsonp();
+    if (parsed.length > 0) return parsed;
+    throw new Error("題庫為空");
+  }
+}
+
+/* ══════════════════════════════════════════
+   遊戲狀態
+   ══════════════════════════════════════════ */
+const STAGES = [
+  { name: "畫具", emoji: "🖌️", hp: 100 },
+  { name: "畫室", emoji: "🏚️", hp: 100 },
+  { name: "資金", emoji: "💰", hp: 100 }
+];
+
+let G = {};
+
+function resetGame() {
+  G = {
+    playerHp: 100,
+    playerMaxHp: 100,
+    coins: 0,
+    stage: 0,
+    enemyHp: 0,
+    enemyMaxHp: 0,
+    correctCount: 0,
+    totalQuestions: 0,
+    usedPotions: 0,
+    inventory: { potion: 0, crystal: 0, lifeToken: 0 },
+    currentQ: null,
+    busy: false,
+    questions: [...allQuestions]
+  };
+}
+
+/* ══════════════════════════════════════════
+   畫面控制
+   ══════════════════════════════════════════ */
+function show(id) {
+  ["titleScreen","loadingScreen","battleScreen","shopScreen","endScreen"].forEach(s => {
+    document.getElementById(s).style.display = "none";
+  });
+  const el = document.getElementById(id);
+  el.style.display = id === "endScreen" ? "flex" : (id === "loadingScreen" ? "flex" : "block");
+  document.getElementById("hud").style.display = (id === "battleScreen" || id === "shopScreen") ? "flex" : "none";
+}
+
+function toast(msg, type, dur) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (type ? " toast-" + type : "");
+  setTimeout(() => t.className = "toast", dur || 1800);
+}
+
+/* ══════════════════════════════════════════
+   HUD 更新
+   ══════════════════════════════════════════ */
+function updateHud() {
+  const pct = Math.max(0, G.playerHp / G.playerMaxHp * 100);
+  const bar = document.getElementById("playerHpBar");
+  bar.style.width = pct + "%";
+  bar.className = "hp-bar" + (pct < 20 ? " low" : pct < 50 ? " mid" : "");
+  document.getElementById("playerHpText").textContent = G.playerHp + " / " + G.playerMaxHp;
+  const cn = document.getElementById("coinNum");
+  cn.textContent = G.coins;
+  cn.classList.remove("pop");
+  void cn.offsetWidth;
+  cn.classList.add("pop");
+  document.getElementById("stageLabel").textContent = "第 " + (G.stage + 1) + " / 3 關";
+}
+
+function updateEnemyHud() {
+  const s = STAGES[G.stage];
+  const pct = Math.max(0, G.enemyHp / G.enemyMaxHp * 100);
+  document.getElementById("enemyHpBar").style.width = pct + "%";
+  document.getElementById("enemyHpText").textContent = G.enemyHp + " / " + G.enemyMaxHp;
+  document.getElementById("enemyEmoji").textContent = s.emoji;
+  document.getElementById("enemyName").textContent = s.name;
+}
+
+/* ══════════════════════════════════════════
+   開始遊戲
+   ══════════════════════════════════════════ */
+async function startGame() {
+  show("loadingScreen");
+  document.getElementById("loadingText").textContent = "正在載入題庫...";
+  try {
+    allQuestions = await loadQuestions();
+  } catch (e) {
+    document.getElementById("loadingText").textContent = "❌ 題庫載入失敗，請檢查網路後重新整理頁面";
+    return;
+  }
+  resetGame();
+  startStage();
+}
+
+/* ══════════════════════════════════════════
+   關卡開始
+   ══════════════════════════════════════════ */
+function startStage() {
+  const s = STAGES[G.stage];
+  G.enemyHp = s.hp;
+  G.enemyMaxHp = s.hp;
+  show("battleScreen");
+  updateHud();
+  updateEnemyHud();
+  nextQuestion();
+}
+
+/* ══════════════════════════════════════════
+   題目
+   ══════════════════════════════════════════ */
+function pickQuestion() {
+  if (G.questions.length === 0) G.questions = [...allQuestions];
+  const idx = Math.floor(Math.random() * G.questions.length);
+  const q = G.questions.splice(idx, 1)[0];
+  const shuffled = [...q.opts].sort(() => Math.random() - 0.5);
+  return { text: q.q, correct: q.a, options: shuffled };
+}
+
+function nextQuestion() {
+  G.currentQ = pickQuestion();
+  G.totalQuestions++;
+  document.getElementById("questionText").textContent = G.currentQ.text;
+  const box = document.getElementById("optionsBox");
+  box.innerHTML = "";
+  const labels = ["A","B","C","D"];
+  G.currentQ.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "opt-btn";
+    btn.textContent = labels[i] + ". " + opt;
+    btn.onclick = () => answer(opt, btn);
+    box.appendChild(btn);
+  });
+}
+
+/* ══════════════════════════════════════════
+   回答
+   ══════════════════════════════════════════ */
+function answer(chosen, btnEl) {
+  if (G.busy) return;
+  G.busy = true;
+  const allBtns = document.querySelectorAll(".opt-btn");
+  allBtns.forEach(b => b.disabled = true);
+
+  const correct = chosen === G.currentQ.correct;
+
+  if (correct) {
+    btnEl.classList.add("correct-flash");
+    G.correctCount++;
+    const dmg = G.buffCrystal ? 50 : 25;
+    G.buffCrystal = false;
+    G.enemyHp = Math.max(0, G.enemyHp - dmg);
+    addCoins(10);
+    updateEnemyHud();
+    toast(dmg >= 50 ? "💥 暴擊！造成 " + dmg + " 傷害！" : "✅ 答對！造成 25 傷害！", "green", 1500);
+
+    if (G.enemyHp <= 0) {
+      setTimeout(() => defeatEnemy(), 1200);
+    } else {
+      setTimeout(() => { G.busy = false; nextQuestion(); }, 1500);
+    }
+  } else {
+    btnEl.classList.add("wrong-flash");
+    const rightBtn = [...allBtns].find(b => b.textContent.includes(G.currentQ.correct));
+    if (rightBtn) setTimeout(() => rightBtn.classList.add("correct-flash"), 300);
+
+    G.playerHp = Math.max(0, G.playerHp - 25);
+    updateHud();
+    toast("❌ 答錯！受到 25 傷害｜正解：" + G.currentQ.correct, "red", 2000);
+
+    if (G.playerHp <= 0) {
+      setTimeout(() => handleDeath(), 1200);
+    } else {
+      setTimeout(() => { G.busy = false; nextQuestion(); }, 2200);
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
+   擊敗敵人
+   ══════════════════════════════════════════ */
+function defeatEnemy() {
+  const bonus = 20 + Math.floor(Math.random() * 31);
+  addCoins(bonus);
+  toast("🎉 擊敗 " + STAGES[G.stage].name + "！獲得 " + bonus + " 金幣！", "gold", 2000);
+  G.busy = false;
+
+  if (G.stage < 2) {
+    setTimeout(() => openShop(), 1500);
+  } else {
+    setTimeout(() => showVictory(), 1500);
+  }
+}
+
+/* ══════════════════════════════════════════
+   死亡處理
+   ══════════════════════════════════════════ */
+function handleDeath() {
+  G.busy = false;
+
+  if (G.inventory.lifeToken > 0) {
+    G.inventory.lifeToken--;
+    G.playerHp = 1;
+    updateHud();
+    toast("🛡 救命符啟動！HP 回到 1！", "green", 2000);
+    setTimeout(() => nextQuestion(), 1500);
+  } else if (G.playerHp <= 0 && G.lastHp === 1) {
+    showGameOver();
+  } else {
+    G.lastHp = G.playerHp;
+    G.playerHp = 1;
+    updateHud();
+    toast("💀 你倒下了…但不甘心！HP 設為 1 繼續挑戰！", "red", 2500);
+    setTimeout(() => nextQuestion(), 2000);
+  }
+}
+
+/* ══════════════════════════════════════════
+   金幣
+   ══════════════════════════════════════════ */
+function addCoins(n) {
+  G.coins += n;
+  updateHud();
+}
+
+/* ══════════════════════════════════════════
+   商店
+   ══════════════════════════════════════════ */
+const SHOP_ITEMS = [
+  { id: "potion", name: "紅藥水", icon: "🧪", desc: "補 50 HP", price: 30, effect() { G.inventory.potion++; } },
+  { id: "crystal", name: "攻擊水晶", icon: "💎", desc: "下一題答對暴擊 -50 HP", price: 40, effect() { G.inventory.crystal++; } },
+  { id: "lifeToken", name: "救命符", icon: "🛡️", desc: "HP 歸零自動復活至 1", price: 80, effect() { G.inventory.lifeToken++; } }
+];
+
+function openShop() {
+  show("shopScreen");
+  document.getElementById("shopCoins").textContent = G.coins;
+  const box = document.getElementById("shopItems");
+  box.innerHTML = "";
+  SHOP_ITEMS.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "shop-card";
+    card.innerHTML = `
+      <div class="icon">${item.icon}</div>
+      <div class="detail"><h4>${item.name}</h4><p>${item.desc}</p></div>
+      <div class="price">💰 ${item.price}</div>
+      <button class="buy-btn">購買</button>`;
+    const buyBtn = card.querySelector(".buy-btn");
+    if (G.coins < item.price) buyBtn.disabled = true;
+    buyBtn.onclick = () => {
+      if (G.coins < item.price) return;
+      G.coins -= item.price;
+      item.effect();
+      document.getElementById("shopCoins").textContent = G.coins;
+      updateHud();
+      toast("✅ 購買了 " + item.name + "！", "gold");
+      if (G.coins < item.price) buyBtn.disabled = true;
+    };
+    box.appendChild(card);
+  });
+}
+
+function leaveShop() {
+  G.stage++;
+  G.lastHp = null;
+  startStage();
+}
+
+/* ══════════════════════════════════════════
+   背包
+   ══════════════════════════════════════════ */
+function toggleBp() {
+  const panel = document.getElementById("bpPanel");
+  if (panel.style.display === "block") {
+    panel.style.display = "none";
+    return;
+  }
+  panel.style.display = "block";
+  renderBp();
+}
+
+function renderBp() {
+  const box = document.getElementById("bpItems");
+  box.innerHTML = "";
+  const items = [
+    { key: "potion", name: "紅藥水", icon: "🧪", desc: "補 50 HP", usable: true },
+    { key: "crystal", name: "攻擊水晶", icon: "💎", desc: "下一題暴擊", usable: true },
+    { key: "lifeToken", name: "救命符", icon: "🛡️", desc: "自動復活", usable: false }
+  ];
+  items.forEach(item => {
+    const qty = G.inventory[item.key] || 0;
+    const row = document.createElement("div");
+    row.className = "bp-item";
+    row.innerHTML = `
+      <div class="info"><span>${item.icon}</span><span>${item.name} <small style="color:#999">${item.desc}</small></span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="qty">×${qty}</span>
+        ${item.usable ? `<button class="bp-use-btn" ${qty <= 0 || (item.key === "potion" && G.playerHp >= G.playerMaxHp) ? "disabled" : ""}>使用</button>` : ""}
+      </div>`;
+    if (item.usable) {
+      const useBtn = row.querySelector(".bp-use-btn");
+      useBtn.onclick = () => useItem(item.key);
+    }
+    box.appendChild(row);
+  });
+}
+
+function useItem(key) {
+  if (key === "potion") {
+    if (G.inventory.potion <= 0 || G.playerHp >= G.playerMaxHp) return;
+    G.inventory.potion--;
+    G.usedPotions++;
+    G.playerHp = Math.min(G.playerMaxHp, G.playerHp + 50);
+    updateHud();
+    toast("🧪 使用紅藥水！HP +50", "green");
+    renderBp();
+  } else if (key === "crystal") {
+    if (G.inventory.crystal <= 0) return;
+    G.inventory.crystal--;
+    G.buffCrystal = true;
+    toast("💎 攻擊水晶裝備！下一題暴擊！", "gold");
+    renderBp();
+  }
+}
+
+/* ══════════════════════════════════════════
+   通關 / 遊戲結束
+   ══════════════════════════════════════════ */
+function showVictory() {
+  localStorage.setItem("cert_idiom", "1");
+  show("endScreen");
+  document.getElementById("endScreen").innerHTML = `
+    <h1 class="victory-title">🏆 恭喜通關！</h1>
+    <div class="stats">
+      ✅ 答對題數：${G.correctCount} / ${G.totalQuestions}<br>
+      💰 剩餘金幣：${G.coins}<br>
+      🧪 使用藥水：${G.usedPotions} 瓶<br><br>
+      你成功穿越了梵谷的藝術生涯，<br>成為真正的<strong>梵谷達人</strong>！
+    </div>
+    <button class="btn btn-gold" onclick="startGame()">再玩一次</button>`;
+}
+
+function showGameOver() {
+  show("endScreen");
+  const el = document.getElementById("endScreen");
+  el.classList.add("gameover-bg");
+  el.innerHTML = `
+    <h1 class="gameover-title">💀 Game Over</h1>
+    <div class="stats">
+      你在第 ${G.stage + 1} 關「${STAGES[G.stage].name}」倒下了…<br>
+      ✅ 答對題數：${G.correctCount} / ${G.totalQuestions}<br>
+      💰 剩餘金幣：${G.coins}
+    </div>
+    <button class="btn btn-red" onclick="startGame()">重新開始</button>`;
+  setTimeout(() => el.classList.remove("gameover-bg"), 100);
+}
+</script>
+</body>
+</html>
