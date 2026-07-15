@@ -168,12 +168,20 @@ function showMap() {
 /* ══════════════════════════════════════
    熱區點擊（兼容觸控）
    ══════════════════════════════════════ */
+function navTo(url) {
+  var a = document.createElement("a");
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 document.querySelectorAll(".hotspot").forEach(function(hs) {
   function go() {
     var id = hs.id;
-    if (id === "hs_dynasty") window.location = encodeURI("../畫作與時期配對/index.html");
-    else if (id === "hs_idiom") window.location = encodeURI("../梵谷達人/index.html");
-    else if (id === "hs_warrior") window.location = encodeURI("../梵谷與我/index.html");
+    if (id === "hs_dynasty") navTo("../畫作與時期配對/index.html");
+    else if (id === "hs_idiom") navTo("../梵谷達人/index.html");
+    else if (id === "hs_warrior") navTo("../梵谷與我/index.html");
     else if (id === "hs_gate") openGate();
   }
   hs.addEventListener("click", go);
@@ -354,8 +362,9 @@ function fitMap() {
   var img = document.getElementById("mapImg");
   var wrap = document.querySelector(".map-wrap");
   function calc() {
-    if (!img.naturalWidth) return;
-    var aspect = img.naturalWidth / img.naturalHeight;
+    var nw = img.naturalWidth || 1672;
+    var nh = img.naturalHeight || 941;
+    var aspect = nw / nh;
     var vw = window.innerWidth;
     var vh = window.innerHeight;
     var w, h;
@@ -367,6 +376,7 @@ function fitMap() {
   if (img.complete) calc();
   else img.onload = calc;
   window.addEventListener("resize", calc);
+  window.addEventListener("orientationchange", function() { setTimeout(calc, 100); });
 }
 </script>
 </body>
