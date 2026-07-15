@@ -17,8 +17,8 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 /* ══ 大地圖 ══ */
 #mapScreen{display:none;position:fixed;inset:0;z-index:1;background:#1a1a10}
 #mapScreen.show{display:flex;align-items:center;justify-content:center}
-.map-wrap{position:relative;width:100vw;height:100vh;height:100dvh}
-#mapImg{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.map-wrap{position:relative;margin:auto}
+#mapImg{display:block;width:100%;height:100%;pointer-events:none}
 
 /* ══ 右上角資訊 ══ */
 .hud-info{position:fixed;top:8px;right:8px;z-index:100;display:flex;align-items:center;gap:6px}
@@ -348,6 +348,26 @@ function resetAll() {
 
 /* ══ 啟動 ══ */
 initCover();
+fitMap();
+
+function fitMap() {
+  var img = document.getElementById("mapImg");
+  var wrap = document.querySelector(".map-wrap");
+  function calc() {
+    if (!img.naturalWidth) return;
+    var aspect = img.naturalWidth / img.naturalHeight;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var w, h;
+    if (vw / vh > aspect) { h = vh; w = vh * aspect; }
+    else { w = vw; h = vw / aspect; }
+    wrap.style.width = w + "px";
+    wrap.style.height = h + "px";
+  }
+  if (img.complete) calc();
+  else img.onload = calc;
+  window.addEventListener("resize", calc);
+}
 </script>
 </body>
 </html>
