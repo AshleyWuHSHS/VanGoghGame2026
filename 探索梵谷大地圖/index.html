@@ -17,8 +17,8 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 /* ══ 大地圖 ══ */
 #mapScreen{display:none;position:fixed;inset:0;z-index:1;background:#1a1a10}
 #mapScreen.show{display:flex;align-items:center;justify-content:center}
-.map-wrap{position:relative;margin:auto}
-#mapImg{display:block;width:100%;height:100%;pointer-events:none}
+.map-wrap{position:relative;width:100vw;height:100vh;height:100dvh}
+#mapImg{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
 
 /* ══ 右上角資訊 ══ */
 .hud-info{position:fixed;top:8px;right:8px;z-index:100;display:flex;align-items:center;gap:6px}
@@ -27,9 +27,8 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 .reset-btn:active{transform:scale(.95);opacity:.7}
 
 /* ══ 透明熱區 ══ */
-.hotspot{position:absolute;transform:translate(-50%,-50%);width:16%;min-width:80px;height:12%;min-height:60px;cursor:pointer;border-radius:16px;transition:background .2s,box-shadow .2s;z-index:10}
+.hotspot{position:absolute;transform:translate(-50%,-50%);width:80px;height:60px;cursor:pointer;border-radius:16px;transition:background .2s,box-shadow .2s;z-index:10}
 .hotspot:hover,.hotspot:active{background:rgba(255,248,220,.3);box-shadow:0 0 24px rgba(255,215,0,.4)}
-/* 已通關印章 */
 .hotspot .stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));opacity:0;transition:opacity .3s}
 .hotspot.done .stamp{opacity:1}
 
@@ -40,7 +39,6 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 .modal h2{text-align:center;font-size:1.4em;color:#5a3e1b;margin-bottom:12px}
 .modal-close{position:absolute;top:10px;right:14px;font-size:1.5em;cursor:pointer;color:#a08a6a;border:none;background:none;padding:8px}
 
-/* slots */
 .slots{display:flex;justify-content:center;gap:10px;margin-bottom:16px}
 .slot{width:88px;height:96px;border:3px dashed #c0a06a;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,248,220,.5);transition:all .2s}
 .slot .slot-label{font-size:.72em;color:#a08a6a;margin-top:3px;text-align:center}
@@ -48,7 +46,6 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 .slot.wrong{animation:slotShake .4s;border-color:#e74c3c}
 @keyframes slotShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-/* backpack in modal */
 .bp-label{text-align:center;font-size:.9em;color:#7a5e3b;margin-bottom:8px}
 .bp-items{display:flex;justify-content:center;gap:10px;min-height:68px;padding:10px;border:2px solid #e8d4b8;border-radius:14px;background:rgba(255,255,255,.5);flex-wrap:wrap}
 .bp-badge{width:62px;height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.9em;border-radius:12px;border:2px solid #d4a76a;background:rgba(255,248,220,.9);cursor:grab;user-select:none;touch-action:none;transition:transform .15s}
@@ -56,10 +53,8 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 .bp-badge .badge-name{font-size:.35em;color:#7a5e3b;margin-top:2px}
 .bp-badge.placed{opacity:.3;pointer-events:none}
 
-/* drag ghost */
 .drag-ghost{position:fixed;z-index:999;pointer-events:none;font-size:2.8em;opacity:.85;transform:translate(-50%,-50%)}
 
-/* ══ 通關畫面 ══ */
 .victory-screen{display:none;position:fixed;inset:0;z-index:300;background:rgba(255,248,220,.97);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 16px}
 .victory-screen.show{display:flex}
 .victory-screen h1{font-size:2em;color:#27ae60;margin-bottom:10px}
@@ -76,37 +71,22 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 </head>
 <body>
 
-<!-- ══ 封面 ══ -->
 <div id="cover"><img src="../cover.png" alt="探索梵谷"></div>
 
-<!-- ══ 大地圖 ══ -->
 <div id="mapScreen">
-  <div class="map-wrap">
+  <div class="map-wrap" id="mapWrap">
     <img id="mapImg" src="../map-bg.png" alt="大地圖" draggable="false">
-
-    <!-- 透明熱區 -->
-    <div class="hotspot" id="hs_dynasty" style="left:20%;top:15%">
-      <div class="stamp">✅</div>
-    </div>
-    <div class="hotspot" id="hs_idiom" style="left:81%;top:20%">
-      <div class="stamp">✅</div>
-    </div>
-    <div class="hotspot" id="hs_warrior" style="left:25%;top:80.2%">
-      <div class="stamp">✅</div>
-    </div>
-    <div class="hotspot" id="hs_gate" style="left:45.2%;top:62.2%">
-      <div class="stamp">✅</div>
-    </div>
+    <div class="hotspot" id="hs_dynasty"><div class="stamp">✅</div></div>
+    <div class="hotspot" id="hs_idiom"><div class="stamp">✅</div></div>
+    <div class="hotspot" id="hs_warrior"><div class="stamp">✅</div></div>
+    <div class="hotspot" id="hs_gate"><div class="stamp">✅</div></div>
   </div>
-
-  <!-- 右上角 -->
   <div class="hud-info">
     <div class="cert-badge">持有 <span id="certCount">0</span> / 3</div>
     <button class="reset-btn" onclick="resetProgress()">🔄 清除</button>
   </div>
 </div>
 
-<!-- ══ Gate Modal ══ -->
 <div class="modal-overlay" id="gateModal">
   <div class="modal">
     <button class="modal-close" onclick="closeGate()">✕</button>
@@ -118,7 +98,6 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
   </div>
 </div>
 
-<!-- ══ Victory ══ -->
 <div class="victory-screen" id="victoryScreen">
   <h1>🎨 探索完成！</h1>
   <p style="font-size:1em;color:#5a3e1b;margin-bottom:8px">你已完成所有關卡，解開了梵谷的藝術密碼</p>
@@ -127,20 +106,24 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 </div>
 
 <script>
-/* ══════════════════════════════════════
-   關卡資料
-   ══════════════════════════════════════ */
 var LEVELS = [
-  { id: "dynasty", key: "cert_dynasty", link: "../畫作與時期配對/index.html", badge: "🌻", badgeName: "向日葵之印", hsId: "hs_dynasty" },
-  { id: "idiom",   key: "cert_idiom",   link: "../梵谷達人/index.html",      badge: "⭐", badgeName: "星星之印",  hsId: "hs_idiom" },
-  { id: "warrior", key: "cert_warrior", link: "../梵谷與我/index.html",       badge: "🌲", badgeName: "柏樹之印",  hsId: "hs_warrior" }
+  { id: "dynasty", key: "cert_dynasty", link: "../畫作與時期配對/index.html", badge: "🌻", badgeName: "向日葵之印" },
+  { id: "idiom",   key: "cert_idiom",   link: "../梵谷達人/index.html",      badge: "⭐", badgeName: "星星之印" },
+  { id: "warrior", key: "cert_warrior", link: "../梵谷與我/index.html",       badge: "🌲", badgeName: "柏樹之印" }
 ];
 var SLOT_IDS = ["dynasty","idiom","warrior"];
 var placed = {};
 
-/* ══════════════════════════════════════
-   封面
-   ══════════════════════════════════════ */
+var IMG_NAT_W = 1672, IMG_NAT_H = 941;
+
+var HOTSPOTS = [
+  { el: null, imgX: 0.20, imgY: 0.15, link: "../畫作與時期配對/index.html" },
+  { el: null, imgX: 0.81, imgY: 0.20, link: "../梵谷達人/index.html" },
+  { el: null, imgX: 0.25, imgY: 0.802, link: "../梵谷與我/index.html" },
+  { el: null, imgX: 0.452, imgY: 0.622, isGate: true }
+];
+
+/* ══ 封面 ══ */
 function initCover() {
   var cover = document.getElementById("cover");
   if (sessionStorage.getItem("cover_seen")) {
@@ -163,34 +146,48 @@ function initCover() {
 function showMap() {
   document.getElementById("mapScreen").classList.add("show");
   refreshStatus();
+  positionHotspots();
 }
 
-/* ══════════════════════════════════════
-   熱區點擊（兼容觸控）
-   ══════════════════════════════════════ */
-function navTo(url) {
-  var a = document.createElement("a");
-  a.href = url;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-document.querySelectorAll(".hotspot").forEach(function(hs) {
-  function go() {
-    var id = hs.id;
-    if (id === "hs_dynasty") navTo("../畫作與時期配對/index.html");
-    else if (id === "hs_idiom") navTo("../梵谷達人/index.html");
-    else if (id === "hs_warrior") navTo("../梵谷與我/index.html");
-    else if (id === "hs_gate") openGate();
+/* ══ 熱區定位：根據 object-fit:contain 實際圖片區域 ══ */
+function positionHotspots() {
+  var img = document.getElementById("mapImg");
+  var wrap = document.getElementById("mapWrap");
+  var nw = img.naturalWidth || IMG_NAT_W;
+  var nh = img.naturalHeight || IMG_NAT_H;
+  var wrapW = wrap.clientWidth || window.innerWidth;
+  var wrapH = wrap.clientHeight || window.innerHeight;
+  var aspect = nw / nh;
+  var cAspect = wrapW / wrapH;
+  var imgW, imgH, imgX, imgY;
+  if (cAspect > aspect) {
+    imgH = wrapH; imgW = wrapH * aspect;
+    imgX = (wrapW - imgW) / 2; imgY = 0;
+  } else {
+    imgW = wrapW; imgH = wrapW / aspect;
+    imgX = 0; imgY = (wrapH - imgH) / 2;
   }
-  hs.addEventListener("click", go);
-  hs.addEventListener("touchend", function(e) { e.preventDefault(); go(); });
+  HOTSPOTS.forEach(function(h) {
+    if (!h.el) h.el = document.getElementById(h.isGate ? "hs_gate" : "hs_" + LEVELS[HOTSPOTS.indexOf(h)].id);
+    h.el.style.left = (imgX + h.imgX * imgW) + "px";
+    h.el.style.top  = (imgY + h.imgY * imgH) + "px";
+  });
+}
+
+/* ══ 熱區導航 ══ */
+document.querySelectorAll(".hotspot").forEach(function(hs, i) {
+  hs.addEventListener("click", function() {
+    if (HOTSPOTS[i].isGate) { openGate(); return; }
+    location.href = HOTSPOTS[i].link;
+  });
+  hs.addEventListener("touchend", function(e) {
+    e.preventDefault();
+    if (HOTSPOTS[i].isGate) { openGate(); return; }
+    location.href = HOTSPOTS[i].link;
+  });
 });
 
-/* ══════════════════════════════════════
-   狀態
-   ══════════════════════════════════════ */
+/* ══ 狀態 ══ */
 function isDone(level) { return localStorage.getItem(level.key) === "1"; }
 
 function refreshStatus() {
@@ -198,7 +195,7 @@ function refreshStatus() {
   LEVELS.forEach(function(lv) {
     if (isDone(lv)) {
       n++;
-      var hs = document.getElementById(lv.hsId);
+      var hs = document.getElementById("hs_" + lv.id);
       if (hs) hs.classList.add("done");
     }
   });
@@ -212,9 +209,7 @@ function resetProgress() {
   location.reload();
 }
 
-/* ══════════════════════════════════════
-   通關大門 Modal
-   ══════════════════════════════════════ */
+/* ══ Gate Modal ══ */
 function openGate() {
   placed = {};
   document.getElementById("gateModal").classList.add("open");
@@ -256,9 +251,7 @@ function renderBp() {
   });
 }
 
-/* ══════════════════════════════════════
-   拖曳系統（滑鼠 + 觸控）
-   ══════════════════════════════════════ */
+/* ══ 拖曳系統 ══ */
 var dragData = null;
 var ghost = null;
 
@@ -320,31 +313,22 @@ function endDrag(x, y) {
 }
 
 function checkAllSlots() {
-  var allFilled = SLOT_IDS.every(function(sid){ return placed[sid]; });
-  if (allFilled) {
+  if (SLOT_IDS.every(function(sid){ return placed[sid]; })) {
     setTimeout(showVictory, 600);
   }
 }
 
-/* ══════════════════════════════════════
-   通關畫面
-   ══════════════════════════════════════ */
+/* ══ 通關畫面 ══ */
 function checkVictory() {
-  var all = LEVELS.every(function(lv){ return isDone(lv); });
-  if (all) {
+  if (LEVELS.every(function(lv){ return isDone(lv); })) {
     var start = parseInt(localStorage.getItem("adventure_start") || Date.now());
     var elapsed = Math.floor((Date.now() - start) / 1000);
-    var mm = Math.floor(elapsed / 60);
-    var ss = elapsed % 60;
-    document.getElementById("victoryTime").textContent = mm + " 分 " + ss + " 秒";
+    document.getElementById("victoryTime").textContent = Math.floor(elapsed/60) + " 分 " + (elapsed%60) + " 秒";
     document.getElementById("victoryScreen").classList.add("show");
   }
 }
 
-function showVictory() {
-  closeGate();
-  checkVictory();
-}
+function showVictory() { closeGate(); checkVictory(); }
 
 function resetAll() {
   LEVELS.forEach(function(lv) { localStorage.removeItem(lv.key); });
@@ -356,28 +340,8 @@ function resetAll() {
 
 /* ══ 啟動 ══ */
 initCover();
-fitMap();
-
-function fitMap() {
-  var img = document.getElementById("mapImg");
-  var wrap = document.querySelector(".map-wrap");
-  function calc() {
-    var nw = img.naturalWidth || 1672;
-    var nh = img.naturalHeight || 941;
-    var aspect = nw / nh;
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    var w, h;
-    if (vw / vh > aspect) { h = vh; w = vh * aspect; }
-    else { w = vw; h = vw / aspect; }
-    wrap.style.width = w + "px";
-    wrap.style.height = h + "px";
-  }
-  if (img.complete) calc();
-  else img.onload = calc;
-  window.addEventListener("resize", calc);
-  window.addEventListener("orientationchange", function() { setTimeout(calc, 100); });
-}
+window.addEventListener("resize", positionHotspots);
+window.addEventListener("orientationchange", function(){ setTimeout(positionHotspots, 150); });
 </script>
 </body>
 </html>
