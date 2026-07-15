@@ -7,32 +7,31 @@
 <style>
 @font-face{font-family:'ChenYuluoyan';src:url('https://github.com/Chenyu-otf/chenyuluoyan_thin/releases/download/v1.0/ChenYuluoyan-Thin.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh;min-height:100dvh;color:#3b2f1e;background:#1a1a10;overflow:hidden;touch-action:manipulation}
+body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;color:#3b2f1e;background:#1a1a10;overflow:hidden;touch-action:manipulation}
 
-/* ══ 封面 ══ */
 #cover{position:fixed;inset:0;z-index:500;background:#000;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .8s}
 #cover.hide{opacity:0;pointer-events:none}
 #cover img{width:100%;height:100%;object-fit:contain}
 
-/* ══ 大地圖 ══ */
-#mapScreen{display:none;position:fixed;inset:0;z-index:1;background:#1a1a10}
-#mapScreen.show{display:flex;align-items:center;justify-content:center}
-.map-wrap{position:relative;width:100vw;height:100vh;height:100dvh}
-#mapImg{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
+#mapScreen{display:none;position:fixed;inset:0;z-index:1;background:#1a1a10;overflow:hidden}
+#mapScreen.show{display:block}
 
-/* ══ 右上角資訊 ══ */
+.map-wrap{position:absolute;top:0;left:0;width:100%;height:100%}
+
+/* 圖片與熱區共同容器 — 由 JS 計算寬高並置中 */
+#mapArea{position:absolute;overflow:hidden}
+#mapImg{display:block;width:100%;height:100%;pointer-events:none}
+
 .hud-info{position:fixed;top:8px;right:8px;z-index:100;display:flex;align-items:center;gap:6px}
 .cert-badge{background:rgba(255,248,220,.92);border:2px solid #d4a76a;border-radius:12px;padding:5px 12px;font-size:.85em;color:#5a3e1b;white-space:nowrap}
 .reset-btn{padding:5px 12px;font-family:inherit;font-size:.8em;border:2px solid #c0a06a;border-radius:10px;background:rgba(255,248,220,.9);color:#7a5e3b;cursor:pointer;white-space:nowrap}
 .reset-btn:active{transform:scale(.95);opacity:.7}
 
-/* ══ 透明熱區 ══ */
 .hotspot{position:absolute;transform:translate(-50%,-50%);width:80px;height:60px;cursor:pointer;border-radius:16px;transition:background .2s,box-shadow .2s;z-index:10}
 .hotspot:hover,.hotspot:active{background:rgba(255,248,220,.3);box-shadow:0 0 24px rgba(255,215,0,.4)}
 .hotspot .stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));opacity:0;transition:opacity .3s}
 .hotspot.done .stamp{opacity:1}
 
-/* ══ Modal ══ */
 .modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:12px}
 .modal-overlay.open{display:flex}
 .modal{background:#fdf6e3;border-radius:24px;padding:24px 18px;max-width:400px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.35);position:relative;max-height:85vh;overflow-y:auto}
@@ -75,11 +74,13 @@ body{font-family:"ChenYuluoyan","Microsoft JhengHei",sans-serif;min-height:100vh
 
 <div id="mapScreen">
   <div class="map-wrap" id="mapWrap">
-    <img id="mapImg" src="../map-bg.png" alt="大地圖" draggable="false">
-    <div class="hotspot" id="hs_dynasty"><div class="stamp">✅</div></div>
-    <div class="hotspot" id="hs_idiom"><div class="stamp">✅</div></div>
-    <div class="hotspot" id="hs_warrior"><div class="stamp">✅</div></div>
-    <div class="hotspot" id="hs_gate"><div class="stamp">✅</div></div>
+    <div id="mapArea">
+      <img id="mapImg" src="../map-bg.png" alt="大地圖" draggable="false">
+      <div class="hotspot" id="hs_dynasty" style="left:20%;top:15%"><div class="stamp">✅</div></div>
+      <div class="hotspot" id="hs_idiom"   style="left:81%;top:20%"><div class="stamp">✅</div></div>
+      <div class="hotspot" id="hs_warrior" style="left:25%;top:80.2%"><div class="stamp">✅</div></div>
+      <div class="hotspot" id="hs_gate"    style="left:45.2%;top:62.2%"><div class="stamp">✅</div></div>
+    </div>
   </div>
   <div class="hud-info">
     <div class="cert-badge">持有 <span id="certCount">0</span> / 3</div>
@@ -114,15 +115,6 @@ var LEVELS = [
 var SLOT_IDS = ["dynasty","idiom","warrior"];
 var placed = {};
 
-var IMG_NAT_W = 1672, IMG_NAT_H = 941;
-
-var HOTSPOTS = [
-  { el: null, imgX: 0.20, imgY: 0.15, link: "../畫作與時期配對/index.html" },
-  { el: null, imgX: 0.81, imgY: 0.20, link: "../梵谷達人/index.html" },
-  { el: null, imgX: 0.25, imgY: 0.802, link: "../梵谷與我/index.html" },
-  { el: null, imgX: 0.452, imgY: 0.622, isGate: true }
-];
-
 /* ══ 封面 ══ */
 function initCover() {
   var cover = document.getElementById("cover");
@@ -145,63 +137,57 @@ function initCover() {
 
 function showMap() {
   document.getElementById("mapScreen").classList.add("show");
+  fitMap();
   refreshStatus();
-  positionHotspots();
 }
 
-/* ══ 熱區定位：根據 object-fit:contain 實際圖片區域 ══ */
-function positionHotspots() {
-  var img = document.getElementById("mapImg");
+/* ══ 核心：讓 #mapArea 精確匹配地圖圖片的長寬比並置中 ══ */
+function fitMap() {
+  var img  = document.getElementById("mapImg");
+  var area = document.getElementById("mapArea");
   var wrap = document.getElementById("mapWrap");
-  var nw = img.naturalWidth || IMG_NAT_W;
-  var nh = img.naturalHeight || IMG_NAT_H;
-  var wrapW = wrap.clientWidth || window.innerWidth;
-  var wrapH = wrap.clientHeight || window.innerHeight;
+  var vw = wrap.clientWidth  || window.innerWidth;
+  var vh = wrap.clientHeight || window.innerHeight;
+  var nw = img.naturalWidth  || 1672;
+  var nh = img.naturalHeight || 941;
   var aspect = nw / nh;
-  var cAspect = wrapW / wrapH;
-  var imgW, imgH, imgX, imgY;
-  if (cAspect > aspect) {
-    imgH = wrapH; imgW = wrapH * aspect;
-    imgX = (wrapW - imgW) / 2; imgY = 0;
-  } else {
-    imgW = wrapW; imgH = wrapW / aspect;
-    imgX = 0; imgY = (wrapH - imgH) / 2;
-  }
-  HOTSPOTS.forEach(function(h) {
-    if (!h.el) h.el = document.getElementById(h.isGate ? "hs_gate" : "hs_" + LEVELS[HOTSPOTS.indexOf(h)].id);
-    h.el.style.left = (imgX + h.imgX * imgW) + "px";
-    h.el.style.top  = (imgY + h.imgY * imgH) + "px";
-  });
+  var w, h;
+  if (vw / vh > aspect) { h = vh; w = vh * aspect; }
+  else                  { w = vw; h = vw / aspect; }
+  area.style.width  = w + "px";
+  area.style.height = h + "px";
+  area.style.left   = ((vw - w) / 2) + "px";
+  area.style.top    = ((vh - h) / 2) + "px";
 }
 
 /* ══ 熱區導航 ══ */
-document.querySelectorAll(".hotspot").forEach(function(hs, i) {
-  hs.addEventListener("click", function() {
-    if (HOTSPOTS[i].isGate) { openGate(); return; }
-    location.href = HOTSPOTS[i].link;
-  });
-  hs.addEventListener("touchend", function(e) {
-    e.preventDefault();
-    if (HOTSPOTS[i].isGate) { openGate(); return; }
-    location.href = HOTSPOTS[i].link;
-  });
+function navTo(url) { location.href = url; }
+
+document.querySelectorAll(".hotspot").forEach(function(hs) {
+  function go() {
+    var id = hs.id;
+    if (id === "hs_dynasty")      navTo(LEVELS[0].link);
+    else if (id === "hs_idiom")   navTo(LEVELS[1].link);
+    else if (id === "hs_warrior") navTo(LEVELS[2].link);
+    else if (id === "hs_gate")    openGate();
+  }
+  hs.addEventListener("click", go);
+  hs.addEventListener("touchend", function(e) { e.preventDefault(); go(); });
 });
 
 /* ══ 狀態 ══ */
 function isDone(level) { return localStorage.getItem(level.key) === "1"; }
-
 function refreshStatus() {
   var n = 0;
   LEVELS.forEach(function(lv) {
     if (isDone(lv)) {
       n++;
-      var hs = document.getElementById("hs_" + lv.id);
-      if (hs) hs.classList.add("done");
+      var el = document.getElementById("hs_" + lv.id);
+      if (el) el.classList.add("done");
     }
   });
   document.getElementById("certCount").textContent = n;
 }
-
 function resetProgress() {
   if (!confirm("確定要清除所有進度嗎？")) return;
   LEVELS.forEach(function(lv) { localStorage.removeItem(lv.key); });
@@ -213,37 +199,26 @@ function resetProgress() {
 function openGate() {
   placed = {};
   document.getElementById("gateModal").classList.add("open");
-  renderSlots();
-  renderBp();
+  renderSlots(); renderBp();
 }
-
-function closeGate() {
-  document.getElementById("gateModal").classList.remove("open");
-}
-
+function closeGate() { document.getElementById("gateModal").classList.remove("open"); }
 function renderSlots() {
-  var box = document.getElementById("slotsBox");
-  box.innerHTML = "";
+  var box = document.getElementById("slotsBox"); box.innerHTML = "";
   SLOT_IDS.forEach(function(sid) {
     var lv = LEVELS.find(function(l){return l.id===sid});
     var div = document.createElement("div");
-    div.className = "slot";
-    div.id = "slot_" + sid;
+    div.className = "slot"; div.id = "slot_" + sid;
     div.setAttribute("data-accept", sid);
     div.innerHTML = '<span>' + lv.badge + '</span><span class="slot-label">' + lv.badgeName + '</span>';
     box.appendChild(div);
   });
 }
-
 function renderBp() {
-  var box = document.getElementById("bpBox");
-  box.innerHTML = "";
+  var box = document.getElementById("bpBox"); box.innerHTML = "";
   LEVELS.forEach(function(lv) {
-    if (!isDone(lv)) return;
-    if (placed[lv.id]) return;
+    if (!isDone(lv) || placed[lv.id]) return;
     var badge = document.createElement("div");
-    badge.className = "bp-badge";
-    badge.id = "badge_" + lv.id;
+    badge.className = "bp-badge"; badge.id = "badge_" + lv.id;
     badge.setAttribute("data-cert", lv.id);
     badge.innerHTML = lv.badge + '<span class="badge-name">' + lv.badgeName + '</span>';
     box.appendChild(badge);
@@ -251,87 +226,53 @@ function renderBp() {
   });
 }
 
-/* ══ 拖曳系統 ══ */
-var dragData = null;
-var ghost = null;
-
+/* ══ 拖曳 ══ */
+var dragData = null, ghost = null;
 function addDragListeners(el) {
   el.addEventListener("mousedown", function(e) { startDrag(el, e.clientX, e.clientY); e.preventDefault(); });
   el.addEventListener("touchstart", function(e) { var t=e.touches[0]; startDrag(el, t.clientX, t.clientY); e.preventDefault(); }, {passive:false});
 }
-
 function startDrag(el, x, y) {
   dragData = el.getAttribute("data-cert");
-  ghost = document.createElement("div");
-  ghost.className = "drag-ghost";
+  ghost = document.createElement("div"); ghost.className = "drag-ghost";
   ghost.textContent = el.textContent.trim().charAt(0);
-  ghost.style.left = x + "px";
-  ghost.style.top = y + "px";
-  document.body.appendChild(ghost);
-  el.style.opacity = ".4";
+  ghost.style.left = x + "px"; ghost.style.top = y + "px";
+  document.body.appendChild(ghost); el.style.opacity = ".4";
 }
-
 document.addEventListener("mousemove", function(e) { moveGhost(e.clientX, e.clientY); });
 document.addEventListener("touchmove", function(e) { if(ghost){var t=e.touches[0];moveGhost(t.clientX,t.clientY);e.preventDefault();} }, {passive:false});
-
-function moveGhost(x, y) {
-  if (!ghost) return;
-  ghost.style.left = x + "px";
-  ghost.style.top = y + "px";
-}
-
+function moveGhost(x, y) { if (!ghost) return; ghost.style.left = x + "px"; ghost.style.top = y + "px"; }
 document.addEventListener("mouseup", function(e) { endDrag(e.clientX, e.clientY); });
-document.addEventListener("touchend", function(e) {
-  if (!ghost) return;
-  var t = e.changedTouches[0];
-  endDrag(t.clientX, t.clientY);
-});
-
+document.addEventListener("touchend", function(e) { if (!ghost) return; var t = e.changedTouches[0]; endDrag(t.clientX, t.clientY); });
 function endDrag(x, y) {
   if (!ghost || !dragData) return;
-  var certId = dragData;
-  var badge = document.getElementById("badge_" + certId);
+  var certId = dragData, badge = document.getElementById("badge_" + certId);
   ghost.remove(); ghost = null; dragData = null;
   if (badge) badge.style.opacity = "";
-
   var slotEl = document.elementFromPoint(x, y);
   while (slotEl && !slotEl.classList.contains("slot")) slotEl = slotEl.parentElement;
   if (!slotEl) return;
-
-  var acceptId = slotEl.getAttribute("data-accept");
-  if (certId === acceptId) {
-    slotEl.classList.add("filled");
-    placed[certId] = true;
+  if (certId === slotEl.getAttribute("data-accept")) {
+    slotEl.classList.add("filled"); placed[certId] = true;
     if (badge) badge.classList.add("placed");
     var lv = LEVELS.find(function(l){return l.id===certId});
     slotEl.innerHTML = '<span style="font-size:2em">' + lv.badge + '</span><span class="slot-label" style="color:#27ae60">✓</span>';
-    checkAllSlots();
-  } else {
-    slotEl.classList.add("wrong");
-    setTimeout(function(){ slotEl.classList.remove("wrong"); }, 500);
-  }
+    if (SLOT_IDS.every(function(s){return placed[s];})) setTimeout(showVictory, 600);
+  } else { slotEl.classList.add("wrong"); setTimeout(function(){slotEl.classList.remove("wrong");},500); }
 }
 
-function checkAllSlots() {
-  if (SLOT_IDS.every(function(sid){ return placed[sid]; })) {
-    setTimeout(showVictory, 600);
-  }
-}
-
-/* ══ 通關畫面 ══ */
+/* ══ 通關 ══ */
 function checkVictory() {
-  if (LEVELS.every(function(lv){ return isDone(lv); })) {
-    var start = parseInt(localStorage.getItem("adventure_start") || Date.now());
-    var elapsed = Math.floor((Date.now() - start) / 1000);
-    document.getElementById("victoryTime").textContent = Math.floor(elapsed/60) + " 分 " + (elapsed%60) + " 秒";
+  if (LEVELS.every(function(lv){return isDone(lv);})) {
+    var s = parseInt(localStorage.getItem("adventure_start")||Date.now());
+    var e = Math.floor((Date.now()-s)/1000);
+    document.getElementById("victoryTime").textContent = Math.floor(e/60)+" 分 "+(e%60)+" 秒";
     document.getElementById("victoryScreen").classList.add("show");
   }
 }
-
 function showVictory() { closeGate(); checkVictory(); }
-
 function resetAll() {
-  LEVELS.forEach(function(lv) { localStorage.removeItem(lv.key); });
+  LEVELS.forEach(function(lv){localStorage.removeItem(lv.key);});
   localStorage.removeItem("adventure_start");
   sessionStorage.removeItem("cover_seen");
   document.getElementById("victoryScreen").classList.remove("show");
@@ -340,8 +281,8 @@ function resetAll() {
 
 /* ══ 啟動 ══ */
 initCover();
-window.addEventListener("resize", positionHotspots);
-window.addEventListener("orientationchange", function(){ setTimeout(positionHotspots, 150); });
+window.addEventListener("resize", fitMap);
+window.addEventListener("orientationchange", function(){ setTimeout(fitMap, 150); });
 </script>
 </body>
 </html>
